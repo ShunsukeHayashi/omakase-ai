@@ -13,11 +13,9 @@ import {
 } from '../services/prompt-generator.js';
 import { scrapeProductsFromUrl } from '../services/scraper.js';
 import { productStore } from '../services/store.js';
+import { storeContextStore } from '../services/store-context.js';
 
 export const promptsRouter = Router();
-
-// In-memory store context (本番ではDBに保存)
-let currentStoreContext: StoreContext | null = null;
 
 // Request body types
 interface PromptGenerateInput {
@@ -72,7 +70,7 @@ promptsRouter.post('/generate', (req, res): void => {
       language: body.language || 'Japanese',
       startMessage: body.startMessage || 'こんにちは！本日はどのような商品をお探しですか？',
       endMessage: body.endMessage || 'ご利用ありがとうございました！',
-      storeContext: body.storeContext || currentStoreContext || undefined,
+      storeContext: body.storeContext || storeContextStore.get() || undefined,
       customRules: body.customRules,
       enabledFeatures: body.enabledFeatures || {
         productSearch: true,
@@ -117,7 +115,7 @@ promptsRouter.post('/preview', (req, res): void => {
       language: body.language || 'Japanese',
       startMessage: body.startMessage || 'こんにちは！',
       endMessage: body.endMessage || 'ありがとうございました！',
-      storeContext: body.storeContext || currentStoreContext || undefined,
+      storeContext: body.storeContext || storeContextStore.get() || undefined,
       customRules: body.customRules,
       enabledFeatures: body.enabledFeatures,
     };
@@ -166,7 +164,7 @@ promptsRouter.post('/from-url', async (req, res): Promise<void> => {
     }
 
     // 4. ストアコンテキストを保存
-    currentStoreContext = storeContext;
+    storeContextStore.set(storeContext);
 
     // 5. サンプルプロンプトを生成
     const sampleConfig: DynamicPromptConfig = {
@@ -210,7 +208,7 @@ promptsRouter.post('/from-url', async (req, res): Promise<void> => {
 promptsRouter.get('/store-context', (_req, res): void => {
   res.json({
     success: true,
-    storeContext: currentStoreContext,
+    storeContext: storeContextStore.get(),
     productCount: productStore.getAll().length,
   });
 });
@@ -231,11 +229,11 @@ promptsRouter.put('/store-context', (req, res): void => {
       policies: body.policies,
     };
 
-    currentStoreContext = context;
+    storeContextStore.set(context);
 
     res.json({
       success: true,
-      storeContext: currentStoreContext,
+      storeContext: storeContextStore.get(),
     });
   } catch (error) {
     console.error('Store context update error:', error);

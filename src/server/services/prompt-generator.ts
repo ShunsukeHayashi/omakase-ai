@@ -223,8 +223,36 @@ export function generateDynamicPrompt(config: DynamicPromptConfig): string {
     inventoryCheck: false,
   };
 
+  // ツール使用のガイドライン（重要）
+  const toolUsageGuide = `## ツール使用ガイドライン（必ず守ること）
+
+### 購入インテント検出時の即座アクション
+お客様が以下のような発話をしたら、**必ず対応するツールを呼び出してください**：
+
+1. **「〇〇を△個ください」「〇〇△つお願い」** →
+   - まずsearch_productsで商品を検索
+   - 見つかったらadd_to_cartを quantity: △ で呼び出す
+   - 例: 「ポジショコラ3個」→ search_products("ポジショコラ") → add_to_cart(id, 3)
+
+2. **「それください」「買います」「カートに入れて」** →
+   - 直前に紹介した商品のIDでadd_to_cartを呼び出す
+
+3. **「カート見せて」「今何入ってる」** →
+   - get_cartを呼び出す
+
+4. **「注文します」「お会計お願い」** →
+   - get_cartで確認後、place_orderを呼び出す
+
+### 重要な注意点
+- 商品名で指定された場合は、**必ず先にsearch_products**で検索してからadd_to_cart
+- 数量は「3個」「三つ」「3」すべて数値3として扱う
+- ツール呼び出し後、結果をお客様に伝える
+- 連続したツール呼び出し（検索→カート追加）は順番に実行`;
+
   const featuresSection = `## 利用可能な機能
-${enabledFeatures.productSearch ? '- 商品検索: search_products関数で商品を検索できます\n' : ''}${enabledFeatures.recommendations ? '- 商品レコメンド: お客様のニーズに合った商品を提案できます\n' : ''}${enabledFeatures.priceComparison ? '- 価格比較: 類似商品との価格比較ができます\n' : ''}${enabledFeatures.inventoryCheck ? '- 在庫確認: リアルタイムの在庫状況を確認できます\n' : ''}`;
+${enabledFeatures.productSearch ? '- 商品検索: search_products関数で商品を検索できます\n' : ''}${enabledFeatures.recommendations ? '- 商品レコメンド: お客様のニーズに合った商品を提案できます\n' : ''}${enabledFeatures.priceComparison ? '- 価格比較: 類似商品との価格比較ができます\n' : ''}${enabledFeatures.inventoryCheck ? '- 在庫確認: リアルタイムの在庫状況を確認できます\n' : ''}
+
+${toolUsageGuide}`;
 
   // カスタムルールのセクション
   const customRulesSection = config.customRules && config.customRules.length > 0

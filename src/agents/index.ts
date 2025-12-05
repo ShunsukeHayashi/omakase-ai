@@ -13,5 +13,6 @@ export {
   buildFAQSupportPrompt,
   buildOnboardingPrompt,
   buildRoboticsPrompt,
+  buildSalesManagerPrompt,
   defaultAgentConfigs,
 } from './prompts.js';

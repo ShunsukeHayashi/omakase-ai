@@ -59,6 +59,14 @@ const agents: AgentType[] = [
     icon: "lucide:compass",
     status: "coming-soon",
   },
+  {
+    id: "sales-manager",
+    name: "Sales Manager",
+    nameJa: "営業部長AI",
+    description: "超体育会系の営業部長。商談報告を詰めて部下の成長を促す",
+    icon: "lucide:megaphone",
+    status: "active",
+  },
 ];
 
 export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
@@ -66,10 +74,10 @@ export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
     <div className="space-y-8">
       {/* Header - Clean typography */}
       <div className="text-center space-y-2">
-        <h2 className="text-2xl font-semibold text-white tracking-tight">
+        <h2 className="text-2xl font-semibold text-slate-900 tracking-tight">
           エージェントタイプ
         </h2>
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-slate-500">
           用途に応じたエージェントを選択してください
         </p>
       </div>
@@ -86,23 +94,24 @@ export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.05, duration: 0.2 }}
+              whileHover={!isDisabled ? { y: -4 } : {}}
             >
               <Card
                 isPressable={!isDisabled}
                 isHoverable={!isDisabled}
                 className={`
-                  relative overflow-hidden rounded-2xl
-                  transition-all duration-200
+                  relative overflow-hidden rounded-2xl border
+                  transition-all duration-200 bg-white h-full
                   ${isDisabled
-                    ? "bg-gray-900/50 border border-gray-800 opacity-50 cursor-not-allowed"
+                    ? "border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed"
                     : isSelected
-                      ? "bg-blue-950/30 border-2 border-blue-500 shadow-lg shadow-blue-500/10"
-                      : "bg-gray-900/80 border border-gray-800 hover:border-blue-500 hover:shadow-lg hover:shadow-blue-500/5"
+                      ? "border-slate-900 bg-white shadow-lg shadow-slate-900/5 ring-2 ring-slate-900 ring-offset-2"
+                      : "border-slate-200 hover:border-slate-300 hover:shadow-md"
                   }
                 `}
                 onPress={() => !isDisabled && onSelect(agent)}
               >
-                <CardBody className="p-6">
+                <CardBody className="p-6 flex flex-col h-full">
                   {/* Icon & Status Row */}
                   <div className="flex items-start justify-between mb-5">
                     {/* Icon - Simplified */}
@@ -110,10 +119,10 @@ export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
                       className={`
                         flex h-12 w-12 items-center justify-center rounded-xl
                         ${isDisabled
-                          ? "bg-gray-800"
+                          ? "bg-slate-100"
                           : isSelected
-                            ? "bg-blue-500/20"
-                            : "bg-gray-800 group-hover:bg-blue-500/10"
+                            ? "bg-slate-900 text-white"
+                            : "bg-slate-50 group-hover:bg-slate-100"
                         }
                         transition-colors duration-200
                       `}
@@ -123,10 +132,10 @@ export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
                         className={`
                           text-2xl
                           ${isDisabled
-                            ? "text-gray-600"
+                            ? "text-slate-400"
                             : isSelected
-                              ? "text-blue-400"
-                              : "text-gray-400"
+                              ? "text-white"
+                              : "text-slate-600"
                           }
                         `}
                       />
@@ -134,33 +143,33 @@ export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
 
                     {/* Status Badge */}
                     {isDisabled ? (
-                      <span className="px-3 py-1 bg-gray-800 text-gray-500 text-xs font-medium rounded-full">
+                      <span className="px-3 py-1 bg-slate-100 text-slate-500 text-xs font-medium rounded-full">
                         準備中
                       </span>
                     ) : isSelected ? (
-                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500">
+                      <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 shadow-sm shadow-blue-500/50">
                         <Icon icon="lucide:check" className="text-sm text-white" />
                       </div>
                     ) : null}
                   </div>
 
                   {/* Content */}
-                  <div className="space-y-1">
+                  <div className="space-y-1 mt-auto">
                     <h3 className={`
                       text-lg font-semibold tracking-tight
-                      ${isDisabled ? "text-gray-600" : "text-white"}
+                      ${isDisabled ? "text-slate-400" : "text-slate-900"}
                     `}>
                       {agent.name}
                     </h3>
                     <p className={`
                       text-sm font-medium
-                      ${isDisabled ? "text-gray-700" : isSelected ? "text-blue-400" : "text-gray-500"}
+                      ${isDisabled ? "text-slate-400" : isSelected ? "text-slate-700" : "text-slate-500"}
                     `}>
                       {agent.nameJa}
                     </p>
                     <p className={`
                       text-sm leading-relaxed pt-2
-                      ${isDisabled ? "text-gray-700" : "text-gray-400"}
+                      ${isDisabled ? "text-slate-400" : "text-slate-600"}
                     `}>
                       {agent.description}
                     </p>
@@ -173,7 +182,7 @@ export const AgentSelector = ({ selectedId, onSelect }: AgentSelectorProps) => {
       </div>
 
       {/* Footer hint - Subtle */}
-      <p className="text-center text-xs text-gray-600">
+      <p className="text-center text-xs text-slate-500">
         選択したエージェントは後から変更できます
       </p>
     </div>

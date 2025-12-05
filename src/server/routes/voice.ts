@@ -16,6 +16,7 @@ import {
   type StoreContext,
   type EnabledFeatures,
 } from '../services/prompt-generator.js';
+import { storeContextStore } from '../services/store-context.js';
 
 export const voiceRouter = Router();
 
@@ -71,12 +72,24 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       enabledFeatures,
     } = body;
 
+    const resolvedStoreContext = storeContext || storeContextStore.get() || undefined;
+
     const openaiVoice = voiceMapping[voice] ?? voice;
 
     // エージェントプロンプトを生成
     let finalInstructions = instructions;
     if (!instructions && agentType) {
-      if (useDynamicPrompt) {
+      // 営業部長AIは専用プロンプトを使用（商品情報不要）
+      if (agentType === 'sales-manager') {
+        const defaultConfig = defaultAgentConfigs[agentType as AgentType] || {};
+        finalInstructions = buildPromptForAgent(agentType as AgentType, {
+          name: name || defaultConfig.name || '鬼塚部長',
+          personality: personality || defaultConfig.personality || '',
+          language: (language as Language) || 'Japanese',
+          startMessage: startMessage || defaultConfig.startMessage || 'オイ！今日もお疲れだな。で、どうだったよ？',
+          endMessage: endMessage || defaultConfig.endMessage || 'よし、じゃあ明日は倍動けよ。分かったな？お疲れ！',
+        });
+      } else if (useDynamicPrompt) {
         // 動的プロンプト生成（商品情報・ストアコンテキスト含む）
         const dynamicConfig: DynamicPromptConfig = {
           agentType,
@@ -109,15 +122,22 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
     }
 
     // Function tools for Voice Agent
+    // ツール説明は具体的なトリガーフレーズを含めてAIが発火タイミングを判断しやすくする
     const voiceTools = [
       {
         type: 'function',
         name: 'search_products',
-        description: '商品を検索します。キーワードで商品を探すときに使用してください。',
+        description: `商品を検索します。以下のような発話で呼び出してください：
+- 「〇〇ありますか」「〇〇探してます」「〇〇見せて」
+- 「チョコレート系は？」「おすすめは？」
+- 商品名、カテゴリ名、特徴でキーワード検索`,
         parameters: {
           type: 'object',
           properties: {
-            query: { type: 'string', description: '検索キーワード' },
+            query: {
+              type: 'string',
+              description: '検索キーワード（商品名、カテゴリ、特徴など）'
+            },
           },
           required: ['query'],
         },
@@ -125,11 +145,13 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       {
         type: 'function',
         name: 'get_product_details',
-        description: '商品の詳細情報を取得します。',
+        description: `商品の詳細情報を取得します。以下のような発話で呼び出してください：
+- 「それ詳しく教えて」「もっと知りたい」
+- 「〇〇の詳細は？」「成分は？」「アレルギー情報は？」`,
         parameters: {
           type: 'object',
           properties: {
-            product_id: { type: 'string', description: '商品ID' },
+            product_id: { type: 'string', description: '商品ID（検索結果から取得）' },
           },
           required: ['product_id'],
         },
@@ -137,12 +159,24 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       {
         type: 'function',
         name: 'add_to_cart',
-        description: 'カートに商品を追加します。',
+        description: `【重要】お客様が商品を購入したい・カートに入れたいと言ったら必ず呼び出してください。
+トリガーフレーズ例：
+- 「〇〇を3個ください」「〇〇3つお願い」→ product_id + quantity:3
+- 「それください」「買います」「カートに入れて」→ 直前の商品を追加
+- 「ポジショコラ3個」→ search_productsで検索後、add_to_cartを呼ぶ
+- 「もう1個追加して」→ quantity:1で追加
+数量の言い方: 「3個」「3つ」「3」「三つ」→ quantity: 3`,
         parameters: {
           type: 'object',
           properties: {
-            product_id: { type: 'string', description: '商品ID' },
-            quantity: { type: 'number', description: '数量（デフォルト: 1）' },
+            product_id: {
+              type: 'string',
+              description: '追加する商品のID。商品名で指定された場合は先にsearch_productsで検索してIDを取得'
+            },
+            quantity: {
+              type: 'number',
+              description: '数量。「3個」「3つ」などの指定があれば数値に変換。デフォルト: 1'
+            },
           },
           required: ['product_id'],
         },
@@ -150,17 +184,22 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       {
         type: 'function',
         name: 'get_cart',
-        description: '現在のカート内容を取得します。',
+        description: `カートの中身を確認します。以下のような発話で呼び出してください：
+- 「カートの中身は？」「今何入ってる？」「確認して」
+- 「合計いくら？」「全部でいくら？」
+- 注文前の確認時にも呼び出す`,
         parameters: { type: 'object', properties: {} },
       },
       {
         type: 'function',
         name: 'remove_from_cart',
-        description: 'カートから商品を削除します。',
+        description: `カートから商品を削除します。以下のような発話で呼び出してください：
+- 「〇〇やっぱりいらない」「〇〇削除して」「〇〇キャンセル」
+- 「それ取り消して」「間違えた」`,
         parameters: {
           type: 'object',
           properties: {
-            product_id: { type: 'string', description: '商品ID' },
+            product_id: { type: 'string', description: '削除する商品ID' },
           },
           required: ['product_id'],
         },
@@ -168,22 +207,30 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       {
         type: 'function',
         name: 'get_recommendations',
-        description: 'おすすめ商品を取得します。',
+        description: `おすすめ商品を提案します。以下のような発話で呼び出してください：
+- 「おすすめは？」「何がいい？」「人気は？」
+- 「〇〇に合うものは？」「ギフトにいいのは？」
+- カテゴリ指定: 「チョコレートのおすすめ」`,
         parameters: {
           type: 'object',
           properties: {
-            category: { type: 'string', description: 'カテゴリ' },
+            category: {
+              type: 'string',
+              description: 'カテゴリ（任意）。例: チョコレート、焼き菓子、ギフト'
+            },
           },
         },
       },
       {
         type: 'function',
         name: 'check_stock',
-        description: '商品の在庫状況を確認します。',
+        description: `在庫状況を確認します。以下のような発話で呼び出してください：
+- 「在庫ある？」「今買える？」「品切れじゃない？」
+- 「〇〇個買えますか？」（大量購入時）`,
         parameters: {
           type: 'object',
           properties: {
-            product_id: { type: 'string', description: '商品ID' },
+            product_id: { type: 'string', description: '確認する商品ID' },
           },
           required: ['product_id'],
         },
@@ -191,16 +238,36 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       {
         type: 'function',
         name: 'place_order',
-        description: 'カートの内容で注文を確定します。',
+        description: `注文を確定します。以下のような発話で呼び出してください：
+- 「注文する」「買います」「決済して」「これで注文」
+- 「それでお願い」「確定で」
+※必ずget_cartでカート内容を確認してから呼び出すこと`,
         parameters: {
           type: 'object',
           properties: {
-            customer_name: { type: 'string', description: 'お客様名' },
-            customer_email: { type: 'string', description: 'メールアドレス' },
+            customer_name: {
+              type: 'string',
+              description: 'お客様名（任意）。「〇〇です」と名乗った場合に設定'
+            },
+            customer_email: {
+              type: 'string',
+              description: 'メールアドレス（任意）。メールを聞いた場合に設定'
+            },
           },
         },
       },
+      {
+        type: 'function',
+        name: 'clear_cart',
+        description: `カートを空にします。以下のような発話で呼び出してください：
+- 「全部キャンセル」「やっぱりやめる」「カート空にして」
+- 「最初からやり直し」`,
+        parameters: { type: 'object', properties: {} },
+      },
     ];
+
+    // 営業部長AIの場合はツールなし（純粋な会話エージェント）
+    const toolsToUse = agentType === 'sales-manager' ? [] : voiceTools;
 
     // OpenAI Realtime API用のエフェメラルトークン取得
     const response = await fetch(
@@ -215,7 +282,7 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
           model: 'gpt-4o-realtime-preview-2024-12-17',
           voice: openaiVoice,
           instructions: finalInstructions || 'You are a helpful assistant.',
-          tools: voiceTools,
+          tools: toolsToUse,
           input_audio_transcription: {
             model: 'whisper-1',
           },

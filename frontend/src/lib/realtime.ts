@@ -14,6 +14,13 @@ export interface AgentConfig {
   speechSpeed: number;
   startMessage: string;
   endMessage: string;
+  agentType?: string;
+}
+
+export interface FunctionCallResult {
+  name: string;
+  call_id: string;
+  result: unknown;
 }
 
 export interface RealtimeCallbacks {
@@ -23,6 +30,7 @@ export interface RealtimeCallbacks {
   onError?: (error: Error) => void;
   onAudioStart?: () => void;
   onAudioEnd?: () => void;
+  onFunctionCall?: (result: FunctionCallResult) => void;
 }
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
@@ -70,13 +78,20 @@ export class RealtimeVoiceClient {
 
     try {
       // 1. バックエンドからエフェメラルキーを取得
-      const instructions = this.buildInstructions();
+      // Note: instructionsはバックエンドで動的生成（商品情報含む）するため送信しない
       const response = await fetch(`${API_BASE}/voice/session`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           voice: this.config.voice,
-          instructions,
+          // バックエンドのdynamicPrompt機能を使用
+          useDynamicPrompt: true,
+          agentType: this.config.agentType || 'shopping-guide',
+          name: this.config.name,
+          personality: this.config.personality,
+          language: this.config.language,
+          startMessage: this.config.startMessage,
+          endMessage: this.config.endMessage,
         }),
       });
 
@@ -247,81 +262,17 @@ export class RealtimeVoiceClient {
         this.callbacks.onError?.(new Error(JSON.stringify(event)));
         break;
 
+      case 'function_call_result':
+        // サーバーからのFunction call結果（カートUI更新用）
+        const funcResult = event as unknown as FunctionCallResult;
+        console.log('[Function Result]', funcResult.name);
+        this.callbacks.onFunctionCall?.(funcResult);
+        break;
+
       default:
         // その他のイベントはログのみ
         break;
     }
-  }
-
-  /**
-   * システムプロンプトを構築
-   * OpenAI Realtime API向けに最適化
-   */
-  private buildInstructions(): string {
-    if (!this.config) return 'You are a helpful voice assistant. Speak naturally and concisely.';
-
-    const languageConfig = {
-      Japanese: {
-        instruction: '必ず日本語で応答してください。',
-        fillers: '「えーと」「そうですね」などの自然な相槌を適度に入れてください。',
-        style: '丁寧語を基本としつつ、親しみやすい話し方を心がけてください。',
-      },
-      English: {
-        instruction: 'Always respond in English.',
-        fillers: 'Use natural fillers like "well", "you know", "let me see" occasionally.',
-        style: 'Be friendly and professional in your tone.',
-      },
-      Korean: {
-        instruction: '반드시 한국어로 응답해 주세요.',
-        fillers: '"음", "그러니까" 등의 자연스러운 추임새를 적절히 사용해 주세요.',
-        style: '존댓말을 기본으로 하되, 친근한 말투를 사용해 주세요.',
-      },
-    };
-
-    const lang = languageConfig[this.config.language];
-
-    return `# Identity
-あなたは「${this.config.name}」です。音声でお客様と会話するAIショッピングアシスタントです。
-
-# Voice Characteristics
-- 声のトーン: 明るく、親しみやすく、信頼感のある声
-- 話すスピード: ゆっくりめ、聞き取りやすいペース
-- ${lang.fillers}
-
-# Personality
-${this.config.personality}
-
-# Communication Style
-1. **簡潔に話す**: 1文は短く、20文字程度を目安に
-2. **自然な会話**: 読み上げではなく、会話として話す
-3. **確認を入れる**: 「〜でよろしいですか？」「〜ということですね」
-4. **ポジティブに**: 否定より肯定の表現を使う
-5. ${lang.style}
-
-# Response Format
-- 長い説明は避け、要点を絞って伝える
-- 質問には直接答え、その後に補足を加える
-- 一度に多くの情報を伝えない（2-3項目まで）
-
-# Behavior Guidelines
-1. 最初は挨拶と簡単な自己紹介から
-2. お客様の要望を丁寧にヒアリング
-3. 商品の魅力を分かりやすく紹介
-4. 押し売りせず、お客様のペースに合わせる
-5. わからないことは正直に「確認いたします」と伝える
-
-# Language
-${lang.instruction}
-
-# Opening Message
-会話開始時は、以下のメッセージを使って挨拶してください：
-「${this.config.startMessage}」
-
-# Important Notes
-- 相手の話を遮らない
-- 長い沈黙を避ける（2秒以上空いたら確認を入れる）
-- 技術的な問題があれば素直に謝罪
-- 終話時は「${this.config.endMessage}」で締める`;
   }
 
   /**

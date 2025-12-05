@@ -116,8 +116,10 @@ export class VoiceWebSocket {
   connect(): Promise<void> {
     return new Promise((resolve, reject) => {
       const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      // Use localhost:3000 for WebSocket (not proxied by Vite)
       const host = import.meta.env.VITE_WS_HOST || 'localhost:3000';
-      this.ws = new WebSocket(`${protocol}//${host}`);
+      const wsUrl = host ? `${protocol}//${host}` : `${protocol}//${window.location.host}`;
+      this.ws = new WebSocket(wsUrl);
 
       this.ws.onopen = () => resolve();
       this.ws.onerror = (e) => reject(e);

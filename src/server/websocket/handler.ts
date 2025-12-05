@@ -118,6 +118,11 @@ function handleMessage(
 ): void {
   const { type } = message;
 
+  // デバッグログ
+  if (type !== 'input_audio_buffer.append') {
+    console.log('[Client →]', type);
+  }
+
   switch (type) {
     case 'update_config':
       // エージェント設定を更新
@@ -445,8 +450,17 @@ function startVoiceSession(session: VoiceSession): void {
         const dataStr = typeof rawData === 'string' ? rawData : Buffer.isBuffer(rawData) ? rawData.toString('utf-8') : String(rawData);
         const message = JSON.parse(dataStr) as Record<string, unknown>;
 
+        // デバッグログ
+        console.log('[OpenAI →]', message.type);
+
+        // エラーの場合は詳細を出力
+        if (message.type === 'error') {
+          console.error('[OpenAI Error]', JSON.stringify(message, null, 2));
+        }
+
         // Function callの処理
         if (message.type === 'response.function_call_arguments.done') {
+          console.log('[Function Call]', message.name);
           handleFunctionCall(session, message);
         }
 
@@ -870,6 +884,16 @@ function handleFunctionCall(
       })
     );
   }
+
+  // Function結果をクライアントにも送信（UIウィジェット更新用）
+  session.ws.send(
+    JSON.stringify({
+      type: 'function_call_result',
+      name,
+      call_id: message.call_id,
+      result,
+    })
+  );
 }
 
 /**
