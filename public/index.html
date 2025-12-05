@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Omakase AI - Voice Shopping Assistant Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Hiragino Sans', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      color: #333;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+
+    header {
+      text-align: center;
+      padding: 40px 0;
+      color: white;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      margin-bottom: 10px;
+    }
+
+    header p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+    }
+
+    .demo-section {
+      display: grid;
+      grid-template-columns: 1fr 400px;
+      gap: 30px;
+      margin-top: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .demo-section {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .product-list {
+      background: white;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+    }
+
+    .product-list h2 {
+      margin-bottom: 20px;
+      color: #333;
+    }
+
+    .scrape-form {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .scrape-form input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .scrape-form input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+
+    .scrape-form button {
+      padding: 12px 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .scrape-form button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+
+    .scrape-form button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .products-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 16px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+
+    .product-card {
+      background: #f8f9fa;
+      border-radius: 12px;
+      padding: 16px;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .product-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    }
+
+    .product-card img {
+      width: 100%;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      background: #e0e0e0;
+    }
+
+    .product-card h3 {
+      font-size: 14px;
+      margin: 12px 0 8px;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .product-card .price {
+      font-size: 16px;
+      font-weight: 700;
+      color: #667eea;
+    }
+
+    .voice-widget {
+      position: sticky;
+      top: 20px;
+    }
+
+    .chat-container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.15);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 600px;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      width: 48px;
+      height: 48px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .chat-header-info h3 {
+      font-size: 18px;
+      margin-bottom: 2px;
+    }
+
+    .chat-header-info p {
+      font-size: 12px;
+      opacity: 0.9;
+    }
+
+    .status-indicator {
+      width: 8px;
+      height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      margin-left: auto;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .message {
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 16px;
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    .message.assistant {
+      background: #f0f0f0;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+    }
+
+    .message.user {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+    }
+
+    .message.system {
+      background: #fff3cd;
+      align-self: center;
+      font-size: 12px;
+      color: #856404;
+    }
+
+    .chat-input {
+      padding: 16px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .voice-button {
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      font-size: 24px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .voice-button:hover {
+      transform: scale(1.05);
+      box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+    }
+
+    .voice-button.recording {
+      background: #ef4444;
+      animation: recording-pulse 1s infinite;
+    }
+
+    @keyframes recording-pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+
+    .text-input {
+      flex: 1;
+      padding: 12px 16px;
+      border: 2px solid #e0e0e0;
+      border-radius: 24px;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .text-input:focus {
+      border-color: #667eea;
+    }
+
+    .send-button {
+      padding: 12px 20px;
+      background: #667eea;
+      color: white;
+      border: none;
+      border-radius: 24px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #888;
+    }
+
+    .empty-state svg {
+      width: 64px;
+      height: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .loading {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #ffffff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Omakase AI</h1>
+      <p>Voice & Chat Shopping Assistant - Demo</p>
+    </header>
+
+    <div class="demo-section">
+      <div class="product-list">
+        <h2>商品データ</h2>
+        <div class="scrape-form">
+          <input type="url" id="scrapeUrl" placeholder="ECサイトのURLを入力してスクレイピング...">
+          <button id="scrapeBtn" onclick="scrapeProducts()">取得</button>
+        </div>
+        <div id="productsContainer" class="products-grid">
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <p>URLを入力して商品データを取得してください</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="voice-widget">
+        <div class="chat-container">
+          <div class="chat-header">
+            <div class="avatar">A</div>
+            <div class="chat-header-info">
+              <h3>彩 (Aya)</h3>
+              <p>AI Shopping Assistant</p>
+            </div>
+            <div class="status-indicator" id="statusIndicator"></div>
+          </div>
+
+          <div class="chat-messages" id="chatMessages">
+            <div class="message assistant">
+              こんにちは！私は彩（アヤ）です。お買い物のお手伝いをさせていただきます。何かお探しですか？
+            </div>
+          </div>
+
+          <div class="chat-input">
+            <button class="voice-button" id="voiceBtn" onclick="toggleVoice()">
+              <span id="voiceIcon">🎤</span>
+            </button>
+            <input type="text" class="text-input" id="textInput" placeholder="メッセージを入力..." onkeypress="handleKeyPress(event)">
+            <button class="send-button" onclick="sendMessage()">送信</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State
+    let ws = null;
+    let isRecording = false;
+    let mediaRecorder = null;
+    let audioContext = null;
+    let products = [];
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      connectWebSocket();
+    });
+
+    // WebSocket Connection
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      ws = new WebSocket(`${protocol}//${window.location.host}`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connected');
+        updateStatus(true);
+      };
+
+      ws.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          handleWebSocketMessage(data);
+        } catch (e) {
+          // Binary audio data
+          playAudio(event.data);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log('WebSocket closed');
+        updateStatus(false);
+        // Reconnect after 3 seconds
+        setTimeout(connectWebSocket, 3000);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+    }
+
+    function handleWebSocketMessage(data) {
+      console.log('Received:', data.type);
+
+      switch (data.type) {
+        case 'voice_session_started':
+          addMessage('system', '音声セッションを開始しました');
+          break;
+
+        case 'voice_session_ended':
+          addMessage('system', '音声セッションを終了しました');
+          stopRecording();
+          break;
+
+        case 'response.audio_transcript.done':
+          if (data.transcript) {
+            addMessage('assistant', data.transcript);
+          }
+          break;
+
+        case 'conversation.item.input_audio_transcription.completed':
+          if (data.transcript) {
+            addMessage('user', data.transcript);
+          }
+          break;
+
+        case 'response.audio.delta':
+          // Audio is being streamed
+          break;
+
+        case 'products':
+          products = data.products;
+          renderProducts();
+          break;
+
+        case 'error':
+          addMessage('system', `エラー: ${data.message}`);
+          break;
+      }
+    }
+
+    function updateStatus(connected) {
+      const indicator = document.getElementById('statusIndicator');
+      indicator.style.background = connected ? '#4ade80' : '#ef4444';
+    }
+
+    // Voice Functions
+    async function toggleVoice() {
+      if (isRecording) {
+        stopRecording();
+      } else {
+        startRecording();
+      }
+    }
+
+    async function startRecording() {
+      try {
+        // Start voice session
+        ws.send(JSON.stringify({ type: 'start_voice_session' }));
+
+        // Get microphone access
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+
+        audioContext = new AudioContext({ sampleRate: 24000 });
+        const source = audioContext.createMediaStreamSource(stream);
+        const processor = audioContext.createScriptProcessor(4096, 1, 1);
+
+        source.connect(processor);
+        processor.connect(audioContext.destination);
+
+        processor.onaudioprocess = (e) => {
+          if (!isRecording) return;
+
+          const inputData = e.inputBuffer.getChannelData(0);
+          const pcm16 = new Int16Array(inputData.length);
+
+          for (let i = 0; i < inputData.length; i++) {
+            const s = Math.max(-1, Math.min(1, inputData[i]));
+            pcm16[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
+          }
+
+          const base64 = btoa(String.fromCharCode(...new Uint8Array(pcm16.buffer)));
+
+          ws.send(JSON.stringify({
+            type: 'input_audio_buffer.append',
+            audio: base64
+          }));
+        };
+
+        isRecording = true;
+        updateVoiceButton();
+      } catch (error) {
+        console.error('Microphone error:', error);
+        addMessage('system', 'マイクへのアクセスができませんでした');
+      }
+    }
+
+    function stopRecording() {
+      isRecording = false;
+      updateVoiceButton();
+
+      if (audioContext) {
+        audioContext.close();
+        audioContext = null;
+      }
+
+      ws.send(JSON.stringify({ type: 'input_audio_buffer.commit' }));
+      ws.send(JSON.stringify({ type: 'response.create' }));
+    }
+
+    function updateVoiceButton() {
+      const btn = document.getElementById('voiceBtn');
+      const icon = document.getElementById('voiceIcon');
+
+      if (isRecording) {
+        btn.classList.add('recording');
+        icon.textContent = '🛑';
+      } else {
+        btn.classList.remove('recording');
+        icon.textContent = '🎤';
+      }
+    }
+
+    async function playAudio(audioData) {
+      // Audio playback implementation
+      // This would decode and play the audio stream from OpenAI
+    }
+
+    // Text Chat Functions
+    function sendMessage() {
+      const input = document.getElementById('textInput');
+      const text = input.value.trim();
+
+      if (!text) return;
+
+      addMessage('user', text);
+      input.value = '';
+
+      // Send to OpenAI via WebSocket
+      ws.send(JSON.stringify({
+        type: 'conversation.item.create',
+        item: {
+          type: 'message',
+          role: 'user',
+          content: [{
+            type: 'input_text',
+            text: text
+          }]
+        }
+      }));
+
+      ws.send(JSON.stringify({ type: 'response.create' }));
+    }
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        sendMessage();
+      }
+    }
+
+    function addMessage(type, text) {
+      const container = document.getElementById('chatMessages');
+      const msg = document.createElement('div');
+      msg.className = `message ${type}`;
+      msg.textContent = text;
+      container.appendChild(msg);
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Product Scraping
+    async function scrapeProducts() {
+      const urlInput = document.getElementById('scrapeUrl');
+      const btn = document.getElementById('scrapeBtn');
+      const url = urlInput.value.trim();
+
+      if (!url) {
+        alert('URLを入力してください');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = '<span class="loading"></span>';
+
+      try {
+        const response = await fetch('/api/scrape', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ url, maxProducts: 20 })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          products = data.products;
+          renderProducts();
+
+          // Add products to store
+          await fetch('/api/products/bulk', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ products })
+          });
+
+          addMessage('system', `${data.productsCount}件の商品を取得しました`);
+        } else {
+          throw new Error(data.error);
+        }
+      } catch (error) {
+        console.error('Scrape error:', error);
+        addMessage('system', `スクレイピングエラー: ${error.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = '取得';
+      }
+    }
+
+    function renderProducts() {
+      const container = document.getElementById('productsContainer');
+
+      if (products.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+            <p>URLを入力して商品データを取得してください</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = products.map(p => `
+        <div class="product-card">
+          <img src="${p.imageUrl || 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='}"
+               alt="${p.name}"
+               onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyMDAiIGhlaWdodD0iMTIwIj48cmVjdCB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEyMCIgZmlsbD0iI2UwZTBlMCIvPjx0ZXh0IHg9IjUwJSIgeT0iNTAlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmaWxsPSIjOTk5Ij5ObyBJbWFnZTwvdGV4dD48L3N2Zz4='">
+          <h3>${p.name}</h3>
+          ${p.price > 0 ? `<div class="price">¥${p.price.toLocaleString()}</div>` : ''}
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
