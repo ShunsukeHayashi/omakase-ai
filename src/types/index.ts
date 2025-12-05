@@ -42,6 +42,8 @@ export interface Product {
   imageUrl?: string;
   productUrl: string;
   isActive: boolean;
+  stockQuantity?: number; // undefined = 在庫管理なし, 0 = 在庫切れ, >0 = 在庫あり
+  lowStockThreshold?: number; // 在庫少アラートのしきい値
 }
 
 export interface QAItem {

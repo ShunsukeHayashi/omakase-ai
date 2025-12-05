@@ -5,6 +5,7 @@ import { NavigationSidebar } from "./components/navigation-sidebar";
 import { ConfigPanel } from "./components/config-panel";
 import { PreviewPhone } from "./components/preview-phone";
 import { AgentSelector, type AgentType } from "./components/agent-selector";
+import { ECContextForm } from "./components/ec-context-form";
 import { Button, Tabs, Tab, Card, CardBody } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
@@ -160,30 +161,8 @@ export default function App() {
 
           {activeTab === "knowledge" && (
             <Card className="border border-white/10 bg-[#0B0B0C]/80 backdrop-blur-sm">
-              <CardBody className="flex min-h-[400px] flex-col items-center justify-center gap-4 p-8 text-center">
-                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20">
-                  <Icon icon="lucide:database" className="text-3xl text-cyan-400" />
-                </div>
-                <h3 className="text-xl font-semibold text-white">Knowledge Base</h3>
-                <p className="max-w-md text-foreground-500">
-                  商品カタログ、FAQ、ドキュメントをアップロードして、AIエージェントの知識を強化します。
-                </p>
-                <div className="mt-4 flex gap-3">
-                  <Button
-                    variant="flat"
-                    className="border border-white/10 bg-white/5"
-                    startContent={<Icon icon="lucide:upload" />}
-                  >
-                    Upload Files
-                  </Button>
-                  <Button
-                    variant="flat"
-                    className="border border-white/10 bg-white/5"
-                    startContent={<Icon icon="lucide:link" />}
-                  >
-                    Scrape URL
-                  </Button>
-                </div>
+              <CardBody className="p-6">
+                <ECContextForm />
               </CardBody>
             </Card>
           )}

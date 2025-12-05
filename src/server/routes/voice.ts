@@ -79,10 +79,10 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       if (useDynamicPrompt) {
         // 動的プロンプト生成（商品情報・ストアコンテキスト含む）
         const dynamicConfig: DynamicPromptConfig = {
-          agentType: agentType as string,
-          agentName: name || defaultAgentConfigs[agentType as AgentType]?.name || 'アヤ',
-          personality: personality || defaultAgentConfigs[agentType as AgentType]?.personality || '明るく親しみやすい。',
-          language: (language as 'Japanese' | 'English' | 'Korean') || 'Japanese',
+          agentType,
+          agentName: name ?? defaultAgentConfigs[agentType as AgentType]?.name ?? 'アヤ',
+          personality: personality ?? defaultAgentConfigs[agentType as AgentType]?.personality ?? '明るく親しみやすい。',
+          language: language ?? 'Japanese',
           startMessage: startMessage || defaultAgentConfigs[agentType as AgentType]?.startMessage || 'こんにちは！',
           endMessage: endMessage || defaultAgentConfigs[agentType as AgentType]?.endMessage || 'ありがとうございました！',
           storeContext,

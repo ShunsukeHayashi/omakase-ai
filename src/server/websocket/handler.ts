@@ -9,6 +9,7 @@ import { WebSocket } from 'ws';
 import { productStore } from '../services/store.js';
 import { cartStore } from '../services/cart.js';
 import { knowledgeStore } from '../services/knowledge.js';
+import { orderStore } from '../services/order.js';
 
 interface AgentConfig {
   name: string;
@@ -71,9 +72,10 @@ export function handleWebSocket(ws: WebSocket): void {
 
   sessions.set(sessionId, session);
 
-  ws.on('message', (data) => {
+  ws.on('message', (rawData) => {
     try {
-      const message = JSON.parse(data.toString()) as Record<string, unknown>;
+      const dataStr = typeof rawData === 'string' ? rawData : Buffer.isBuffer(rawData) ? rawData.toString('utf-8') : String(rawData);
+      const message = JSON.parse(dataStr) as Record<string, unknown>;
       handleMessage(session, message);
     } catch {
       ws.send(
@@ -362,13 +364,13 @@ function startVoiceSession(session: VoiceSession): void {
               {
                 type: 'function',
                 name: 'check_stock',
-                description: '商品の在庫状況を確認します。',
+                description: '商品の在庫状況を確認します。在庫数、在庫切れ、残りわずかなどの情報を返します。',
                 parameters: {
                   type: 'object',
                   properties: {
                     product_id: {
                       type: 'string',
-                      description: '商品ID',
+                      description: '在庫を確認したい商品のID',
                     },
                   },
                   required: ['product_id'],
@@ -381,6 +383,47 @@ function startVoiceSession(session: VoiceSession): void {
                 parameters: {
                   type: 'object',
                   properties: {},
+                },
+              },
+              {
+                type: 'function',
+                name: 'place_order',
+                description: 'カートの内容で注文を確定します。お客様の名前やメールアドレスなどの情報を任意で受け取ります。',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    customer_name: {
+                      type: 'string',
+                      description: 'お客様のお名前',
+                    },
+                    customer_email: {
+                      type: 'string',
+                      description: 'メールアドレス',
+                    },
+                    customer_phone: {
+                      type: 'string',
+                      description: '電話番号',
+                    },
+                    notes: {
+                      type: 'string',
+                      description: '配送に関する備考やメッセージ',
+                    },
+                  },
+                },
+              },
+              {
+                type: 'function',
+                name: 'get_order_status',
+                description: '注文の状態を確認します。',
+                parameters: {
+                  type: 'object',
+                  properties: {
+                    order_id: {
+                      type: 'string',
+                      description: '注文番号',
+                    },
+                  },
+                  required: ['order_id'],
                 },
               },
             ],
@@ -396,10 +439,11 @@ function startVoiceSession(session: VoiceSession): void {
       );
     });
 
-    openaiWs.on('message', (data) => {
+    openaiWs.on('message', (rawData) => {
       // OpenAIからのメッセージをクライアントに転送
       try {
-        const message = JSON.parse(data.toString());
+        const dataStr = typeof rawData === 'string' ? rawData : Buffer.isBuffer(rawData) ? rawData.toString('utf-8') : String(rawData);
+        const message = JSON.parse(dataStr) as Record<string, unknown>;
 
         // Function callの処理
         if (message.type === 'response.function_call_arguments.done') {
@@ -409,7 +453,7 @@ function startVoiceSession(session: VoiceSession): void {
         session.ws.send(JSON.stringify(message));
       } catch {
         // Binary audio data
-        session.ws.send(data);
+        session.ws.send(rawData);
       }
     });
 
@@ -465,7 +509,9 @@ interface SearchFaqArgs {
   query: string;
 }
 
-interface RecommendationsArgs {
+// Defined for future use when recommendations needs product/category filtering
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+interface _RecommendationsArgs {
   product_id?: string;
   category?: string;
 }
@@ -485,6 +531,7 @@ function handleFunctionCall(
 
   switch (name) {
     case 'search_products': {
+      const args = parsedArgs as SearchProductsArgs;
       const products = productStore.search(args.query);
       result = {
         count: products.length,
@@ -499,6 +546,7 @@ function handleFunctionCall(
     }
 
     case 'get_product_details': {
+      const args = parsedArgs as ProductIdArgs;
       const product = productStore.get(args.product_id);
       if (product) {
         result = {
@@ -512,10 +560,11 @@ function handleFunctionCall(
     }
 
     case 'add_to_cart': {
+      const args = parsedArgs as AddToCartArgs;
       const item = cartStore.addItem(
         session.cartId,
         args.product_id,
-        args.quantity || 1
+        args.quantity ?? 1
       );
       if (item) {
         const { subtotal, itemCount } = cartStore.getTotal(session.cartId);
@@ -551,6 +600,7 @@ function handleFunctionCall(
     }
 
     case 'search_faq': {
+      const args = parsedArgs as SearchFaqArgs;
       const faqs = knowledgeStore.searchFAQ(args.query);
       result = {
         count: faqs.length,
@@ -585,6 +635,7 @@ function handleFunctionCall(
     }
 
     case 'remove_from_cart': {
+      const args = parsedArgs as ProductIdArgs;
       const removed = cartStore.removeItem(session.cartId, args.product_id);
       if (removed) {
         const { subtotal, itemCount } = cartStore.getTotal(session.cartId);
@@ -603,6 +654,7 @@ function handleFunctionCall(
     }
 
     case 'update_cart_quantity': {
+      const args = parsedArgs as UpdateCartArgs;
       const updated = cartStore.updateQuantity(
         session.cartId,
         args.product_id,
@@ -612,7 +664,7 @@ function handleFunctionCall(
         const { subtotal, itemCount } = cartStore.getTotal(session.cartId);
         result = {
           success: true,
-          message: `数量を${args.quantity}個に変更しました`,
+          message: `数量を${String(args.quantity)}個に変更しました`,
           cartSummary: {
             itemCount,
             subtotal,
@@ -630,18 +682,18 @@ function handleFunctionCall(
     }
 
     case 'check_stock': {
+      const args = parsedArgs as ProductIdArgs;
       const product = productStore.get(args.product_id);
       if (product) {
-        // 簡易的な在庫チェック（実際はDB連携が必要）
-        const inStock = product.isActive;
+        const stockStatus = productStore.getStockStatus(args.product_id);
         result = {
           productId: product.id,
           productName: product.name,
-          inStock,
-          stockLevel: inStock ? 'available' : 'out_of_stock',
-          message: inStock
-            ? '在庫がございます'
-            : '申し訳ございません、現在在庫切れです',
+          inStock: stockStatus?.inStock ?? true,
+          quantity: stockStatus?.quantity,
+          isLowStock: stockStatus?.isLowStock ?? false,
+          stockLevel: stockStatus?.inStock ? (stockStatus.isLowStock ? 'low' : 'available') : 'out_of_stock',
+          message: stockStatus?.message ?? '在庫情報がありません',
         };
       } else {
         result = { error: '商品が見つかりませんでした' };
@@ -655,6 +707,142 @@ function handleFunctionCall(
         success: true,
         message: 'カートを空にしました',
       };
+      break;
+    }
+
+    case 'place_order': {
+      const args = parsedArgs as {
+        customer_name?: string;
+        customer_email?: string;
+        customer_phone?: string;
+        notes?: string;
+      };
+
+      // カートの内容を取得
+      const cartItems = cartStore.getItems(session.cartId);
+      if (cartItems.length === 0) {
+        result = {
+          success: false,
+          error: 'カートが空です。商品を追加してから注文してください。',
+        };
+        break;
+      }
+
+      // 注文アイテムを構築
+      const orderItems = cartItems
+        .map((item: { productId: string; quantity: number }) => {
+          const product = productStore.get(item.productId);
+          if (!product) return null;
+          return { product, quantity: item.quantity };
+        })
+        .filter((item: { product: typeof productStore extends { get: (id: string) => infer R } ? R : never; quantity: number } | null): item is { product: NonNullable<ReturnType<typeof productStore.get>>; quantity: number } => item !== null);
+
+      if (orderItems.length === 0) {
+        result = {
+          success: false,
+          error: '商品情報の取得に失敗しました。',
+        };
+        break;
+      }
+
+      // 在庫チェック
+      for (const item of orderItems) {
+        const stockResult = productStore.decrementStock(item.product.id, item.quantity);
+        if (!stockResult.success) {
+          result = {
+            success: false,
+            error: `「${item.product.name}」の${stockResult.error || '在庫が不足しています'}`,
+          };
+          break;
+        }
+      }
+
+      // 注文作成
+      const order = orderStore.create({
+        cartId: session.cartId,
+        sessionId: session.sessionId,
+        items: orderItems,
+        customerInfo: {
+          name: args.customer_name,
+          email: args.customer_email,
+          phone: args.customer_phone,
+        },
+        notes: args.notes,
+      });
+
+      // 注文確定
+      orderStore.confirm(order.id);
+
+      // カートをクリア
+      cartStore.clear(session.cartId);
+
+      result = {
+        success: true,
+        orderId: order.id,
+        orderNumber: order.id.slice(0, 8).toUpperCase(),
+        itemCount: order.items.length,
+        subtotal: order.subtotal,
+        tax: order.tax,
+        total: order.total,
+        formattedTotal: `¥${order.total.toLocaleString()}`,
+        message: orderStore.formatOrderForVoice(order),
+        status: order.status,
+      };
+      break;
+    }
+
+    case 'get_order_status': {
+      const args = parsedArgs as { order_id: string };
+      const order = orderStore.get(args.order_id);
+
+      if (!order) {
+        // 短縮IDでも検索
+        const allOrders = orderStore.getAll();
+        const found = allOrders.find((o) => o.id.startsWith(args.order_id));
+        if (found) {
+          const statusMessages: Record<string, string> = {
+            pending: '注文を受け付けました。確認中です。',
+            confirmed: '注文が確定しました。準備を開始します。',
+            processing: '注文を準備中です。',
+            shipped: '発送完了しました。お届けまでしばらくお待ちください。',
+            delivered: '配達完了しました。',
+            cancelled: 'この注文はキャンセルされました。',
+          };
+
+          result = {
+            orderId: found.id,
+            orderNumber: found.id.slice(0, 8).toUpperCase(),
+            status: found.status,
+            statusMessage: statusMessages[found.status],
+            itemCount: found.items.length,
+            total: found.total,
+            formattedTotal: `¥${found.total.toLocaleString()}`,
+            createdAt: found.createdAt.toISOString(),
+          };
+        } else {
+          result = { error: '注文が見つかりませんでした。注文番号をご確認ください。' };
+        }
+      } else {
+        const statusMessages: Record<string, string> = {
+          pending: '注文を受け付けました。確認中です。',
+          confirmed: '注文が確定しました。準備を開始します。',
+          processing: '注文を準備中です。',
+          shipped: '発送完了しました。お届けまでしばらくお待ちください。',
+          delivered: '配達完了しました。',
+          cancelled: 'この注文はキャンセルされました。',
+        };
+
+        result = {
+          orderId: order.id,
+          orderNumber: order.id.slice(0, 8).toUpperCase(),
+          status: order.status,
+          statusMessage: statusMessages[order.status],
+          itemCount: order.items.length,
+          total: order.total,
+          formattedTotal: `¥${order.total.toLocaleString()}`,
+          createdAt: order.createdAt.toISOString(),
+        };
+      }
       break;
     }
 

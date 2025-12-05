@@ -14,6 +14,7 @@ import { voiceRouter } from './routes/voice.js';
 import { productsRouter } from './routes/products.js';
 import { agentsRouter } from './routes/agents.js';
 import { promptsRouter } from './routes/prompts.js';
+import { scraperRouter } from './routes/scraper.js';
 import { handleWebSocket } from './websocket/handler.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -34,6 +35,7 @@ app.use('/api/voice', voiceRouter);
 app.use('/api/products', productsRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/prompts', promptsRouter);
+app.use('/api/scraper', scraperRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

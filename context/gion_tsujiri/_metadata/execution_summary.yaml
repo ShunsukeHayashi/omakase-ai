@@ -1,0 +1,88 @@
+---
+execution_date: "2025-12-05"
+source_url: "https://shop.giontsujiri.co.jp/collections/tea"
+api_endpoint: "https://shop.giontsujiri.co.jp/collections/tea/products.json"
+platform: "Shopify"
+
+extraction_stats:
+  total_products_found: 21
+  products_extracted: 21
+  extraction_success_rate: 100%
+  files_created: 22
+
+processing_details:
+  method: "Shopify JSON API + Individual Product JSON"
+  content_language: "Japanese"
+  crawl_depth: 1
+  pages_fetched: 18
+
+categories_extracted:
+  sencha:
+    count: 6
+    files:
+      - tenkaichi.md
+      - tsujiri-hachijuhachiya.md
+      - tokusen-tsujiri-hachijuhachiya.md
+      - sencha-teabag-17.md
+      - sencha-teabag-multi.md
+      - cold-sencha-teabag.md
+  hojicha:
+    count: 6
+    files:
+      - koto-kaori-80.md
+      - toji-kaori-200.md
+      - hojicha-teabag-15.md
+      - hojicha-teabag-multi.md
+      - cold-hojicha-teabag.md
+      - hojicha-latte.md
+  gyokuro:
+    count: 2
+    files:
+      - gyokuro-teabag.md
+      - kabusecha-kokusei.md
+  genmaicha:
+    count: 2
+    files:
+      - matcha-genmaicha.md
+      - genmaicha-teabag.md
+  matcha:
+    count: 3
+    files:
+      - green-tea.md
+      - tokusen-green-tea.md
+      - matcha-latte.md
+  gift_sets:
+    count: 1
+    files:
+      - issen-assortment.md
+  specialty:
+    count: 1
+    files:
+      - sakura-cha.md
+
+price_range:
+  min: 648
+  max: 2916
+  currency: "JPY"
+
+data_quality:
+  fields_extracted:
+    - product_name
+    - sku
+    - price
+    - variants
+    - description
+    - brewing_instructions
+    - tags
+    - availability
+  missing_fields:
+    - exact_weight_for_some_products
+    - expiration_info
+    - detailed_shipping_conditions
+  confidence_score: 0.92
+
+notes:
+  - "All products are in stock"
+  - "Gift wrapping (noshi) available for selected items"
+  - "Product descriptions include detailed brewing instructions"
+  - "Vendor field shows 'test-giontsujiri' in API (production alias)"

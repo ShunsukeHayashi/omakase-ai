@@ -136,6 +136,14 @@ class CartStore {
   }
 
   /**
+   * カート内の全アイテムを取得
+   */
+  getItems(cartId: string): CartItem[] {
+    const cart = this.carts.get(cartId);
+    return cart?.items ?? [];
+  }
+
+  /**
    * カートの合計を計算
    */
   getTotal(cartId: string): { subtotal: number; itemCount: number; items: CartItem[] } {

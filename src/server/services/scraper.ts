@@ -116,7 +116,7 @@ export async function scrapeProductsFromUrl(
 
     return products;
   } catch (error) {
-    throw error;
+    throw new Error(`Failed to scrape products from ${url}: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -246,7 +246,9 @@ function extractFromJsonLd(
       const html = $(el).html();
       if (!html) return;
       const json: unknown = JSON.parse(html);
-      const items: JsonLdProduct[] = Array.isArray(json) ? json : [json as JsonLdProduct];
+      const items: JsonLdProduct[] = Array.isArray(json)
+        ? (json as JsonLdProduct[])
+        : [json as JsonLdProduct];
 
       for (const item of items) {
         if (item['@type'] === 'Product') {

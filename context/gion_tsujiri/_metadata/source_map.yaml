@@ -1,0 +1,104 @@
+---
+# Source URL Mapping for Gion Tsujiri Products
+
+collection_page: "https://shop.giontsujiri.co.jp/collections/tea"
+api_base: "https://shop.giontsujiri.co.jp/products/"
+
+products:
+  sencha:
+    tenkaichi:
+      sku: "23315"
+      source: "https://shop.giontsujiri.co.jp/products/23315"
+      api: "https://shop.giontsujiri.co.jp/products/23315.json"
+    tsujiri-hachijuhachiya:
+      sku: "23375"
+      source: "https://shop.giontsujiri.co.jp/products/23375"
+      api: "https://shop.giontsujiri.co.jp/products/23375.json"
+    tokusen-tsujiri-hachijuhachiya:
+      sku: "23353"
+      source: "https://shop.giontsujiri.co.jp/products/23353"
+      api: "https://shop.giontsujiri.co.jp/products/23353.json"
+    sencha-teabag-17:
+      sku: "23023"
+      source: "https://shop.giontsujiri.co.jp/products/23023"
+      api: "https://shop.giontsujiri.co.jp/products/23023.json"
+    sencha-teabag-multi:
+      sku: "23022"
+      source: "https://shop.giontsujiri.co.jp/products/23022"
+      api: "https://shop.giontsujiri.co.jp/products/23022.json"
+    cold-sencha-teabag:
+      sku: "26325"
+      source: "https://shop.giontsujiri.co.jp/products/26325"
+      api: "https://shop.giontsujiri.co.jp/products/26325.json"
+
+  hojicha:
+    koto-kaori-80:
+      sku: "24517"
+      source: "https://shop.giontsujiri.co.jp/products/24517"
+      api: "https://shop.giontsujiri.co.jp/products/24517.json"
+    toji-kaori-200:
+      sku: "24535"
+      source: "https://shop.giontsujiri.co.jp/products/24535"
+      api: "https://shop.giontsujiri.co.jp/products/24535.json"
+    hojicha-teabag-15:
+      sku: "24043"
+      source: "https://shop.giontsujiri.co.jp/products/24043"
+      api: "https://shop.giontsujiri.co.jp/products/24043.json"
+    hojicha-teabag-multi:
+      sku: "24042"
+      source: "https://shop.giontsujiri.co.jp/products/24042"
+      api: "https://shop.giontsujiri.co.jp/products/24042.json"
+    cold-hojicha-teabag:
+      sku: "26345"
+      source: "https://shop.giontsujiri.co.jp/products/26345"
+      api: "https://shop.giontsujiri.co.jp/products/26345.json"
+    hojicha-latte:
+      sku: "36153"
+      source: "https://shop.giontsujiri.co.jp/products/36153"
+      api: "https://shop.giontsujiri.co.jp/products/36153.json"
+
+  gyokuro:
+    gyokuro-teabag:
+      sku: "22023"
+      source: "https://shop.giontsujiri.co.jp/products/22023"
+      api: "https://shop.giontsujiri.co.jp/products/22023.json"
+    kabusecha-kokusei:
+      sku: "22715"
+      source: "https://shop.giontsujiri.co.jp/products/22715"
+      api: "https://shop.giontsujiri.co.jp/products/22715.json"
+
+  genmaicha:
+    matcha-genmaicha:
+      sku: "24175"
+      source: "https://shop.giontsujiri.co.jp/products/24175"
+      api: "https://shop.giontsujiri.co.jp/products/24175.json"
+    genmaicha-teabag:
+      sku: "24023"
+      source: "https://shop.giontsujiri.co.jp/products/24023"
+      api: "https://shop.giontsujiri.co.jp/products/24023.json"
+
+  matcha:
+    green-tea:
+      sku: "36123"
+      source: "https://shop.giontsujiri.co.jp/products/36123"
+      api: "https://shop.giontsujiri.co.jp/products/36123.json"
+    tokusen-green-tea:
+      sku: "36113"
+      source: "https://shop.giontsujiri.co.jp/products/36113"
+      api: "https://shop.giontsujiri.co.jp/products/36113.json"
+    matcha-latte:
+      sku: "36143"
+      source: "https://shop.giontsujiri.co.jp/products/36143"
+      api: "https://shop.giontsujiri.co.jp/products/36143.json"
+
+  gift_sets:
+    issen-assortment:
+      sku: "47123"
+      source: "https://shop.giontsujiri.co.jp/products/47123"
+      api: "https://shop.giontsujiri.co.jp/products/47123.json"
+
+  specialty:
+    sakura-cha:
+      sku: "92300"
+      source: "https://shop.giontsujiri.co.jp/products/92300"
+      api: "https://shop.giontsujiri.co.jp/products/92300.json"

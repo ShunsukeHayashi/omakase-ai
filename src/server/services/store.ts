@@ -30,6 +30,12 @@ class ProductStore {
     if (data.imageUrl) {
       product.imageUrl = data.imageUrl;
     }
+    if (data.stockQuantity !== undefined) {
+      product.stockQuantity = data.stockQuantity;
+    }
+    if (data.lowStockThreshold !== undefined) {
+      product.lowStockThreshold = data.lowStockThreshold;
+    }
 
     this.products.set(product.id, product);
     return product;
@@ -64,6 +70,109 @@ class ProductStore {
 
   clear(): void {
     this.products.clear();
+  }
+
+  /**
+   * 在庫数量を更新
+   */
+  updateStock(id: string, quantity: number): Product | undefined {
+    const product = this.products.get(id);
+    if (!product) return undefined;
+
+    product.stockQuantity = Math.max(0, quantity);
+    this.products.set(id, product);
+    return product;
+  }
+
+  /**
+   * 在庫を減らす（購入時）
+   */
+  decrementStock(id: string, amount: number = 1): { success: boolean; product?: Product; error?: string } {
+    const product = this.products.get(id);
+    if (!product) {
+      return { success: false, error: '商品が見つかりません' };
+    }
+
+    // 在庫管理なしの場合は常に成功
+    if (product.stockQuantity === undefined) {
+      return { success: true, product };
+    }
+
+    if (product.stockQuantity < amount) {
+      return { success: false, error: '在庫が不足しています', product };
+    }
+
+    product.stockQuantity -= amount;
+    this.products.set(id, product);
+    return { success: true, product };
+  }
+
+  /**
+   * 在庫を増やす（入荷時）
+   */
+  incrementStock(id: string, amount: number = 1): Product | undefined {
+    const product = this.products.get(id);
+    if (!product) return undefined;
+
+    product.stockQuantity = (product.stockQuantity ?? 0) + amount;
+    this.products.set(id, product);
+    return product;
+  }
+
+  /**
+   * 在庫状況を取得
+   */
+  getStockStatus(id: string): { inStock: boolean; quantity?: number; isLowStock: boolean; message: string } | undefined {
+    const product = this.products.get(id);
+    if (!product) return undefined;
+
+    // 在庫管理なしの場合
+    if (product.stockQuantity === undefined) {
+      return {
+        inStock: true,
+        isLowStock: false,
+        message: '在庫あり',
+      };
+    }
+
+    const threshold = product.lowStockThreshold ?? 5;
+    const isLowStock = product.stockQuantity > 0 && product.stockQuantity <= threshold;
+
+    if (product.stockQuantity === 0) {
+      return {
+        inStock: false,
+        quantity: 0,
+        isLowStock: false,
+        message: '在庫切れ',
+      };
+    }
+
+    return {
+      inStock: true,
+      quantity: product.stockQuantity,
+      isLowStock,
+      message: isLowStock
+        ? `残りわずか（${product.stockQuantity}点）`
+        : `在庫あり（${product.stockQuantity}点）`,
+    };
+  }
+
+  /**
+   * 在庫切れ商品を取得
+   */
+  getOutOfStockProducts(): Product[] {
+    return this.getAll().filter(p => p.stockQuantity === 0);
+  }
+
+  /**
+   * 在庫少の商品を取得
+   */
+  getLowStockProducts(): Product[] {
+    return this.getAll().filter(p => {
+      if (p.stockQuantity === undefined || p.stockQuantity === 0) return false;
+      const threshold = p.lowStockThreshold ?? 5;
+      return p.stockQuantity <= threshold;
+    });
   }
 
   /**

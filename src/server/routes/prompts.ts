@@ -42,7 +42,11 @@ interface StoreContextInput {
   storeDescription?: string;
   storeUrl?: string;
   categories?: string[];
-  brandVoice?: string;
+  brandVoice?: {
+    tone: string;
+    keywords: string[];
+    avoidWords: string[];
+  };
   policies?: {
     shipping?: string;
     returns?: string;
@@ -150,7 +154,7 @@ promptsRouter.post('/from-url', async (req, res): Promise<void> => {
     console.log(`Generating context from URL: ${url}`);
 
     // 1. URLからストアコンテキストを生成
-    const storeContext = await generateStoreContextFromUrl(url);
+    const storeContext = generateStoreContextFromUrl(url);
 
     // 2. 商品情報をスクレイピング
     const products = await scrapeProductsFromUrl(url, maxProducts);
