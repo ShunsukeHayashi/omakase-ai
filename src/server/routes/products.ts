@@ -250,3 +250,9 @@ productsRouter.get('/inventory/out-of-stock', (_req, res): void => {
     products,
   });
 });
+
+// DELETE /api/products - 全商品削除
+productsRouter.delete('/', (_req, res): void => {
+  productStore.clear();
+  res.json({ success: true, message: 'All products cleared' });
+});

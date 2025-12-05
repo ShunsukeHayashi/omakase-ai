@@ -16,6 +16,8 @@ import { agentsRouter } from './routes/agents.js';
 import { promptsRouter } from './routes/prompts.js';
 import { scraperRouter } from './routes/scraper.js';
 import { handleWebSocket } from './websocket/handler.js';
+import { ecScraperService } from './services/ec-scraper.js';
+import { productStore } from './services/store.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -47,10 +49,52 @@ wss.on('connection', handleWebSocket);
 
 const PORT = process.env.PORT || 3000;
 
-server.listen(PORT, () => {
+/**
+ * 起動時に商品データを自動取得
+ */
+async function initializeProducts(): Promise<void> {
+  const storeUrl = process.env.STORE_URL;
+  const storeType = (process.env.STORE_TYPE || 'shopify') as 'shopify' | 'general_ec' | 'base' | 'custom';
+  const maxProducts = parseInt(process.env.MAX_PRODUCTS || '50', 10);
+
+  if (!storeUrl) {
+    console.log('STORE_URL not set, skipping product initialization');
+    return;
+  }
+
+  console.log(`Initializing products from: ${storeUrl}`);
+
+  try {
+    // 既存の商品をクリア
+    productStore.clear();
+
+    // スクレイプジョブを作成・実行
+    const job = ecScraperService.createJob({
+      url: storeUrl,
+      storeType,
+      options: { maxProducts },
+    });
+
+    const result = await ecScraperService.executeJob(job.id);
+
+    if (result.success) {
+      console.log(`Loaded ${result.productsImported} products from ${storeUrl}`);
+      console.log(`Price range: ¥${result.summary.priceRange.min} - ¥${result.summary.priceRange.max}`);
+    } else {
+      console.error('Failed to initialize products:', result.errors);
+    }
+  } catch (error) {
+    console.error('Product initialization error:', error);
+  }
+}
+
+server.listen(PORT, async () => {
   console.log(`Omakase AI server running on port ${PORT}`);
   console.log(`Widget: http://localhost:${PORT}`);
   console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
+
+  // 商品データを初期化
+  await initializeProducts();
 });
 
 export { app, server, wss };
