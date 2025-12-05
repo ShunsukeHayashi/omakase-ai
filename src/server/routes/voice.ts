@@ -108,6 +108,100 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       }
     }
 
+    // Function tools for Voice Agent
+    const voiceTools = [
+      {
+        type: 'function',
+        name: 'search_products',
+        description: '商品を検索します。キーワードで商品を探すときに使用してください。',
+        parameters: {
+          type: 'object',
+          properties: {
+            query: { type: 'string', description: '検索キーワード' },
+          },
+          required: ['query'],
+        },
+      },
+      {
+        type: 'function',
+        name: 'get_product_details',
+        description: '商品の詳細情報を取得します。',
+        parameters: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: '商品ID' },
+          },
+          required: ['product_id'],
+        },
+      },
+      {
+        type: 'function',
+        name: 'add_to_cart',
+        description: 'カートに商品を追加します。',
+        parameters: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: '商品ID' },
+            quantity: { type: 'number', description: '数量（デフォルト: 1）' },
+          },
+          required: ['product_id'],
+        },
+      },
+      {
+        type: 'function',
+        name: 'get_cart',
+        description: '現在のカート内容を取得します。',
+        parameters: { type: 'object', properties: {} },
+      },
+      {
+        type: 'function',
+        name: 'remove_from_cart',
+        description: 'カートから商品を削除します。',
+        parameters: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: '商品ID' },
+          },
+          required: ['product_id'],
+        },
+      },
+      {
+        type: 'function',
+        name: 'get_recommendations',
+        description: 'おすすめ商品を取得します。',
+        parameters: {
+          type: 'object',
+          properties: {
+            category: { type: 'string', description: 'カテゴリ' },
+          },
+        },
+      },
+      {
+        type: 'function',
+        name: 'check_stock',
+        description: '商品の在庫状況を確認します。',
+        parameters: {
+          type: 'object',
+          properties: {
+            product_id: { type: 'string', description: '商品ID' },
+          },
+          required: ['product_id'],
+        },
+      },
+      {
+        type: 'function',
+        name: 'place_order',
+        description: 'カートの内容で注文を確定します。',
+        parameters: {
+          type: 'object',
+          properties: {
+            customer_name: { type: 'string', description: 'お客様名' },
+            customer_email: { type: 'string', description: 'メールアドレス' },
+          },
+        },
+      },
+    ];
+
     // OpenAI Realtime API用のエフェメラルトークン取得
     const response = await fetch(
       'https://api.openai.com/v1/realtime/sessions',
@@ -121,6 +215,7 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
           model: 'gpt-4o-realtime-preview-2024-12-17',
           voice: openaiVoice,
           instructions: finalInstructions || 'You are a helpful assistant.',
+          tools: voiceTools,
           input_audio_transcription: {
             model: 'whisper-1',
           },
