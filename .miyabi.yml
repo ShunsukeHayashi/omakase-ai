@@ -1,0 +1,110 @@
+# Miyabi Project Configuration
+# omakase-ai - AI-powered conversational commerce platform
+
+project:
+  name: omakase-ai
+  version: 0.1.0
+  description: AI-powered conversational commerce platform with Voice & Chat agents
+
+# GitHub Integration
+github:
+  owner: ShunsukeHayashi
+  repo: omakase-ai
+  default_branch: main
+
+# Agent Configuration
+agents:
+  enabled: true
+  coordinator:
+    max_concurrency: 3
+    timeout_minutes: 30
+
+  codegen:
+    model: claude-sonnet-4-20250514
+    max_tokens: 8000
+
+  review:
+    passing_score: 80
+    security_scan: true
+
+  deployment:
+    staging:
+      auto_deploy: true
+      approval_required: false
+    production:
+      auto_deploy: false
+      approval_required: true
+      approval_target: CTO
+
+# Quality Gates
+quality:
+  typescript_errors: 0
+  eslint_errors: 0
+  test_coverage_min: 80
+  critical_vulnerabilities: 0
+
+# Labels (Shikigaku Theory - 65 Labels)
+labels:
+  type:
+    - bug
+    - feature
+    - refactor
+    - docs
+    - test
+    - chore
+    - security
+  priority:
+    - P0-Critical
+    - P1-High
+    - P2-Medium
+    - P3-Low
+  state:
+    - pending
+    - analyzing
+    - implementing
+    - reviewing
+    - testing
+    - deploying
+    - done
+  agent:
+    - coordinator
+    - codegen
+    - review
+    - issue
+    - pr
+    - deployment
+    - test
+
+# Escalation Rules
+escalation:
+  tech_lead:
+    - architecture_issues
+    - circular_dependencies
+    - build_failures
+  po:
+    - unclear_requirements
+    - priority_decisions
+  ciso:
+    - security_vulnerabilities
+    - data_breach_risk
+  cto:
+    - production_deployments
+
+# Notifications
+notifications:
+  slack:
+    enabled: false
+  discord:
+    enabled: false
+  lark:
+    enabled: false
+
+# MCP Servers
+mcp:
+  ide_integration: true
+  github_enhanced: true
+  project_context: true
+  filesystem: true
+  context_engineering: true
+  miyabi: true
+  dev3000: true

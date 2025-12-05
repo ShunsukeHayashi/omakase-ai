@@ -1,170 +1,245 @@
-# Omakase AI - Claude Code Configuration
+# omakase-ai - Claude Code Context
 
-## Constitution (Core Principles)
+## プロジェクト概要
 
-### Article I: Spec-Driven Development
-全ての機能は仕様から始まる。コードは仕様の表現であり、仕様がコードを生成する。
+**omakase-ai** - Miyabiフレームワークで構築された自律型開発プロジェクト
 
-### Article II: Test-First Imperative
-テストは実装前に書く。テストが失敗することを確認してから実装を開始する。（非交渉）
+識学理論(Shikigaku Theory)とAI Agentsを組み合わせた自律型開発環境。
 
-### Article III: Simplicity
-最小限の複雑さで最大の価値を提供する。過度な抽象化を避ける。
-
-### Article IV: Library-First
-全ての機能はスタンドアロンライブラリとして始める。
-
-### Article V: Integration-First Testing
-モックではなく実際の環境（本物のDB、実際のサービス）でテストする。
+### リポジトリ情報
+```
+GitHub: ShunsukeHayashi/omakase-ai
+Branch: main
+Miyabi: .miyabi.yml
+```
 
 ---
 
-## Project Context
+## クイックスタート
 
-- **Type**: AI-powered conversational commerce platform
-- **Product**: Omakase AI - Voice & Chat agents for websites
-- **Mascot**: アヤ (Aya)
-- **Parent Repo**: kamui (https://github.com/ShunsukeHayashi/kamui)
-- **Reference**: [spec-kit](https://github.com/github/spec-kit) - Spec-Driven Development toolkit
+### 状態確認
+```
+/miyabi-status
+```
 
----
+### Issue作成 → Agent実行
+```
+/create-issue          # 対話的にIssue作成
+/miyabi-agent          # Issue番号指定でAgent実行
+```
 
-## Agent Types
-
-Omakase AIは異なる用途に特化した5つのエージェントタイプを提供:
-
-| Agent | Mode | Status | Purpose |
-|-------|------|--------|---------|
-| **Shopping Guide Agent** | Voice/Chat | Default | ブランドセーフな挨拶、カタログ連携レコメンド |
-| **Product Sales Agent** | Voice/Chat | Active | 商品スペック、在庫、レビュー連携、アップセル |
-| **FAQ Support Agent** | Voice/Chat | Active | ナレッジベースからFAQ即答、記事リンク |
-| **Onboarding Agent** | Voice | Coming Soon | 音声ガイド付きウェルカムツアー |
-| **Robotics Agent** | Vision/Voice | Coming Soon | カメラビジョン＋音声の物理空間コンシェルジュ |
-
-### Widget Configuration
-
-- **Position**: Bottom Left / Bottom Right
-- **Style**: Button / Preview / Hidden (自前ボタン)
-- **Height**: 可変 (デフォルト 89%)
-- **Welcome Notification**: 表示ON/OFF
+### 全自動モード
+```
+/miyabi-auto           # Water Spider全自動運用
+```
 
 ---
 
-## Knowledge Base & Training
+## コントロール階層
 
-Omakase AIは3つのトレーニングデータソースを持つ:
+```
+Human Layer (あなた)
+├── 戦略決定 / Issue作成 / 承認 / エスカレーション対応
+│
+├── スラッシュコマンド
+│   /miyabi-status  /create-issue  /miyabi-agent  /deploy
+│
+└── Agent Layer (自律実行)
+    Coordinator → CodeGen → Review → PR → Deployment
+```
 
-### 1. Products
-商品カタログ管理
-- **Fields**: Image, Name, Description, Price, URL, Active
-- **Export**: 対応
-- **Search**: 商品名検索
+---
 
-### 2. Questions & Answers
-FAQ ナレッジベース
-- **Fields**: Question, Answer, Status
-- **Export**: 対応
-- **Search**: Q&A検索
+## スラッシュコマンド一覧
 
-### 3. Documents
-ドキュメントアップロード
-- **Formats**: PDF, DOCX, TXT, CSV, PPTX, XLSX
-- **Max Size**: 100MB
-- **Upload**: Drag & Drop対応
-
-### Platform Features
-
-| Feature | Tier |
+| コマンド | 用途 |
 |---------|------|
-| Analytics | All |
-| Conversations | All |
-| Leads | Principal/Enterprise |
-| Custom Rules | All |
-| Re-Scraping | All |
+| `/miyabi-status` | プロジェクト状態確認 |
+| `/miyabi-init` | 新規Miyabiプロジェクト作成 |
+| `/miyabi-agent` | Issue指定でAgent実行 |
+| `/miyabi-auto` | Water Spider全自動モード |
+| `/miyabi-todos` | TODOコメント自動検出・Issue化 |
+| `/create-issue` | Agent実行用Issue対話作成 |
+| `/agent-run` | Autonomous Agent実行パイプライン |
+| `/test` | プロジェクト全体テスト実行 |
+| `/deploy` | Firebase/Cloudデプロイ |
+| `/verify` | 環境・コンパイル・テスト全チェック |
+| `/security-scan` | セキュリティ脆弱性スキャン |
+| `/generate-docs` | コードからドキュメント自動生成 |
 
 ---
 
-## Development Commands
+## Skills（自動起動）
+
+Claude Codeが文脈から自動的に適切なスキルを起動:
+
+| スキル | トリガー例 |
+|-------|-----------|
+| `mcp-integration` | "VS Codeエラー確認", "GitHub Issue操作" |
+| `miyabi-orchestration` | "タスク分解", "並列実行", "DAG" |
+| `codegen-agent` | "コード生成", "実装", "新機能" |
+| `review-agent` | "レビュー", "品質チェック", "スキャン" |
+| `issue-agent` | "Issue分析", "ラベル付け" |
+| `pr-agent` | "PR作成", "プルリクエスト" |
+| `deployment-agent` | "デプロイ", "staging", "production" |
+
+---
+
+## MCP統合（7サーバー）
+
+`.claude/mcp.json` で定義:
+
+| MCP Server | 機能 |
+|------------|------|
+| `ide-integration` | VS Code診断、Jupyter実行 |
+| `github-enhanced` | 拡張GitHub操作 |
+| `project-context` | 依存関係分析 |
+| `filesystem` | ファイルシステムアクセス |
+| `context-engineering` | AIコンテキスト最適化 |
+| `miyabi` | Miyabi CLI統合 |
+| `dev3000` | UI/UXデバッグ（83%時間削減） |
+
+---
+
+## 7つの自律エージェント
+
+### Agent階層
+```
+CoordinatorAgent (統括)
+    ├── IssueAgent      - 65ラベル自動分類
+    ├── CodeGenAgent    - Claude Sonnet 4コード生成
+    ├── ReviewAgent     - 品質スコア（80点合格）
+    ├── TestAgent       - カバレッジ80%+
+    ├── PRAgent         - Conventional Commits
+    └── DeploymentAgent - Firebase CI/CD
+```
+
+### 自動パイプライン
+```
+Issue作成 → IssueAgent(ラベル) → CoordinatorAgent(DAG分解)
+    → CodeGenAgent(実装) → ReviewAgent(80点チェック)
+    → TestAgent(カバレッジ) → PRAgent(Draft PR)
+    → DeploymentAgent(自動デプロイ)
+```
+
+---
+
+## 品質基準
+
+| 項目 | 基準 | 測定 |
+|------|------|------|
+| 品質スコア | ≥80点 | ReviewAgent |
+| TypeScriptエラー | 0件 | `npm run typecheck` |
+| Critical脆弱性 | 0件 | セキュリティスキャン |
+| テストカバレッジ | ≥80% | Vitest |
+
+---
+
+## エスカレーション
+
+Agentが自動判断できない時、Human Layerに相談:
+
+| 宛先 | 内容 |
+|------|------|
+| TechLead | アーキテクチャ判断、循環依存 |
+| PO | ビジネス要件不明確 |
+| CISO | セキュリティ問題 |
+| CTO | 本番デプロイ承認 |
+
+---
+
+## プロジェクト構造
+
+```
+omakase-ai/
+├── CLAUDE.md              # このファイル
+├── .claude/
+│   ├── agents/            # 7 Agent定義
+│   ├── commands/          # 12 スラッシュコマンド
+│   ├── skills/            # 7 自動起動スキル
+│   ├── mcp-servers/       # MCPサーバー実装
+│   ├── mcp.json           # MCP設定
+│   └── hooks/             # 自動化フック
+├── src/                   # ソースコード
+├── frontend/              # フロントエンド
+└── tests/                 # テストコード
+```
+
+---
+
+## 開発ガイドライン
+
+### TypeScript
+```json
+{
+  "compilerOptions": {
+    "strict": true,
+    "module": "ESNext",
+    "target": "ES2022"
+  }
+}
+```
+
+### セキュリティ
+- 機密情報は環境変数: `GITHUB_TOKEN`, `ANTHROPIC_API_KEY`
+- `.env` を `.gitignore` に含める
+- Secret検出パターンでスキャン
+
+### テスト
+```bash
+npm test                    # 全テスト
+npm run test:watch          # Watch mode
+npm run test:coverage       # カバレッジ
+```
+
+---
+
+## 環境変数
 
 ```bash
-# Development
-npm run dev              # 開発サーバー起動
-npm run watch            # TypeScript watch mode
-
-# Quality
-npm run lint             # ESLint check
-npm run lint:fix         # Auto-fix
-npm run typecheck        # TypeScript type check
-npm run format           # Prettier formatting
-
-# Testing
-npm test                 # Run all tests
-npm run test:coverage    # Coverage report (target: 80%+)
-
-# Build
-npm run build            # Build all
-npm run package          # Create release package
+GITHUB_TOKEN=ghp_xxxxx           # GitHub PAT（必須）
+ANTHROPIC_API_KEY=sk-ant-xxxxx   # Anthropic API（必須）
 ```
 
 ---
 
-## Code Standards
+## 識学理論 5原則
 
-- **Language**: TypeScript (strict mode)
-- **Indent**: 2 spaces
-- **Comments**: 日本語 OK
-- **Commits**: English with conventional prefixes (feat/fix/refactor/docs/test/chore)
-- **Coverage**: 80%+ target
-
----
-
-## Workflow (Spec-Driven)
-
-1. `/speckit.constitution` - プロジェクト原則を定義
-2. `/speckit.specify` - 要件を仕様化（ユーザーストーリー、受け入れ条件）
-3. `/speckit.plan` - 技術設計・アーキテクチャ
-4. `/speckit.tasks` - タスク分解
-5. `/speckit.implement` - 実装
-6. `/speckit.validate` - 検証
+1. **責任の明確化** - 各AgentがIssueに対する責任を負う
+2. **権限の委譲** - Agentは自律的に判断・実行可能
+3. **階層の設計** - CoordinatorAgent → 専門Agent
+4. **結果の評価** - 品質スコア、カバレッジで客観評価
+5. **曖昧性の排除** - DAGで依存関係明示
 
 ---
 
-## Directory Structure
+## よく使うコマンド
 
-```
-omakase_ai/
-├── .claude/
-│   ├── commands/        # Slash commands
-│   ├── context/         # Context modules
-│   ├── agents/          # Agent specifications
-│   └── settings.json    # Claude Code settings
-├── src/                 # Source code
-├── tests/               # Test files
-├── docs/                # Documentation
-│   ├── specs/           # Specifications
-│   ├── plans/           # Implementation plans
-│   └── tasks/           # Task breakdowns
-└── CLAUDE.md            # This file
+```bash
+# 状態確認
+/miyabi-status
+
+# Issue → Agent実行
+/create-issue
+/miyabi-agent
+
+# 検証・デプロイ
+/verify
+/test
+/deploy
+
+# 全自動運用
+/miyabi-auto
 ```
 
 ---
 
-## Prohibitions
+## 関連ドキュメント
 
-- `.env` ファイルをコミットしない
-- `node_modules/` を直接編集しない
-- 本番認証情報をファイルに記載しない
-- テストなしで機能を追加しない
-- 仕様なしで実装を開始しない
+- `.claude/README.md` - Claude Code設定詳細
+- `.claude/skills/README.md` - スキル一覧
+- `.claude/agents/` - 各Agent詳細定義
 
 ---
 
-## Quick Reference
-
-| Command | Description |
-|---------|-------------|
-| `/specify` | 新しい仕様を作成 |
-| `/plan` | 実装計画を作成 |
-| `/implement` | タスクを実行 |
-| `/test` | テストを実行 |
-| `/verify` | 全体検証 |
+Miyabi - Beauty in Autonomous Development
