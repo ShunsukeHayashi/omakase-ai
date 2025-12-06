@@ -423,9 +423,334 @@ storage:
 
 ---
 
-## 11. 参考資料
+## 11. 実験環境セットアップ
+
+### 11.1 インフラ構成
+
+```yaml
+infrastructure:
+  kubernetes:
+    cluster: miyabi-experiment-cluster
+    node_pools:
+      - name: coordinator-pool
+        machine_type: n2-standard-8
+        count: 3
+        labels:
+          role: coordinator
+
+      - name: agent-pool
+        machine_type: n2-standard-4
+        count: 50
+        autoscaling:
+          min: 20
+          max: 70
+        labels:
+          role: agent
+
+      - name: monitoring-pool
+        machine_type: n2-standard-4
+        count: 3
+        labels:
+          role: monitoring
+
+  databases:
+    redis:
+      mode: cluster
+      nodes: 6
+      memory: 8GB
+
+    postgres:
+      version: 15
+      replicas: 3
+      storage: 500GB
+
+    influxdb:
+      version: 2.7
+      retention: 30d
+```
+
+### 11.2 デプロイスクリプト
+
+```bash
+#!/bin/bash
+# deploy-experiment.sh
+
+set -e
+
+PHASE=${1:-1}
+AGENT_COUNT=${2:-50}
+
+echo "=== 200-Agent Experiment Deployment ==="
+echo "Phase: $PHASE, Agents: $AGENT_COUNT"
+
+# 1. インフラ確認
+kubectl get nodes -l role=agent
+
+# 2. Coordinator展開
+kubectl apply -f k8s/coordinator-ha.yaml
+
+# 3. Agent展開
+kubectl scale deployment miyabi-agent --replicas=$AGENT_COUNT
+
+# 4. 監視システム起動
+kubectl apply -f k8s/monitoring-stack.yaml
+
+# 5. ヘルスチェック
+./scripts/health-check.sh
+
+echo "=== Deployment Complete ==="
+```
+
+### 11.3 実験開始コマンド
+
+```bash
+# Phase 1: ベースライン (50 Agents)
+./experiment.sh start --phase=1 --agents=50 --duration=24h
+
+# Phase 2: スケールアップ (100 Agents)
+./experiment.sh start --phase=2 --agents=100 --duration=48h
+
+# Phase 3: フルスケール (200 Agents)
+./experiment.sh start --phase=3 --agents=200 --duration=72h --chaos=true
+```
+
+---
+
+## 12. 結果レポートテンプレート
+
+### 12.1 サマリーレポート
+
+```markdown
+# 200-Agent Experiment Report - Phase X
+
+## 実験概要
+- 実施日時: YYYY-MM-DD HH:MM - YYYY-MM-DD HH:MM
+- 実験時間: XXh
+- Agent数: XXX
+- 投入タスク総数: X,XXX,XXX
+
+## 結果サマリー
+
+| 指標 | 目標 | 実績 | 判定 |
+|------|------|------|------|
+| スループット | ≥500/min | XXX/min | ✓/✗ |
+| P99レイテンシ | ≤5s | X.Xs | ✓/✗ |
+| 可用性 | ≥99.9% | XX.XX% | ✓/✗ |
+| エラー率 | ≤0.1% | X.XX% | ✓/✗ |
+| 障害復旧 | ≤30s | XXs | ✓/✗ |
+
+## パフォーマンス推移
+
+[グラフ: スループット推移]
+[グラフ: レイテンシ分布]
+[グラフ: エラー率推移]
+
+## インシデント
+
+| 時刻 | 内容 | 影響 | 対応 |
+|------|------|------|------|
+| HH:MM | ... | ... | ... |
+
+## 考察
+
+### 成功点
+- ...
+
+### 課題
+- ...
+
+### 改善案
+- ...
+
+## 次フェーズへの推奨事項
+- ...
+```
+
+### 12.2 詳細メトリクス出力
+
+```typescript
+interface ExperimentReport {
+  metadata: {
+    experimentId: string;
+    phase: number;
+    startTime: number;
+    endTime: number;
+    duration: number;
+  };
+
+  summary: {
+    totalTasks: number;
+    completedTasks: number;
+    failedTasks: number;
+    successRate: number;
+  };
+
+  performance: {
+    throughput: {
+      avg: number;
+      min: number;
+      max: number;
+      p50: number;
+      p99: number;
+    };
+    latency: {
+      avg: number;
+      p50: number;
+      p90: number;
+      p99: number;
+      max: number;
+    };
+  };
+
+  agents: {
+    deployed: number;
+    maxActive: number;
+    minActive: number;
+    avgUtilization: number;
+    restarts: number;
+  };
+
+  incidents: Array<{
+    timestamp: number;
+    type: string;
+    severity: 'critical' | 'warning' | 'info';
+    description: string;
+    resolution: string;
+    duration: number;
+  }>;
+
+  recommendations: string[];
+}
+```
+
+---
+
+## 13. 実験自動化
+
+### 13.1 CI/CD統合
+
+```yaml
+# .github/workflows/experiment.yml
+name: 200-Agent Experiment
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: 'Experiment Phase (1-3)'
+        required: true
+        default: '1'
+      duration:
+        description: 'Duration in hours'
+        required: true
+        default: '24'
+
+jobs:
+  experiment:
+    runs-on: self-hosted
+    timeout-minutes: 4320  # 72h max
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Kubernetes
+        run: |
+          gcloud container clusters get-credentials miyabi-experiment
+
+      - name: Deploy Infrastructure
+        run: |
+          ./scripts/deploy-experiment.sh ${{ inputs.phase }}
+
+      - name: Run Experiment
+        run: |
+          ./scripts/run-experiment.sh \
+            --phase=${{ inputs.phase }} \
+            --duration=${{ inputs.duration }}h
+
+      - name: Collect Results
+        run: |
+          ./scripts/collect-results.sh
+
+      - name: Generate Report
+        run: |
+          ./scripts/generate-report.sh
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiment-results-phase-${{ inputs.phase }}
+          path: |
+            results/
+            reports/
+```
+
+### 13.2 自動スケジュール実行
+
+```yaml
+# experiment-scheduler.yaml
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: experiment-phase1
+spec:
+  schedule: "0 0 * * 1"  # 毎週月曜 00:00
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: experiment-runner
+              image: miyabi/experiment-runner:latest
+              args:
+                - --phase=1
+                - --duration=24h
+                - --report=true
+          restartPolicy: OnFailure
+```
+
+---
+
+## 14. 緊急停止手順
+
+### 14.1 即時停止
+
+```bash
+# 全Agent停止
+kubectl scale deployment miyabi-agent --replicas=0
+
+# 負荷生成停止
+kubectl delete job load-generator
+
+# 実験フラグ無効化
+kubectl set env deployment/miyabi-coordinator EXPERIMENT_MODE=false
+```
+
+### 14.2 段階的停止
+
+```bash
+# 1. 新規タスク受付停止
+./experiment.sh pause
+
+# 2. 処理中タスク完了待機 (最大5分)
+./experiment.sh drain --timeout=5m
+
+# 3. Agent数削減
+kubectl scale deployment miyabi-agent --replicas=50
+
+# 4. 最終状態保存
+./experiment.sh snapshot
+
+# 5. 完全停止
+./experiment.sh stop
+```
+
+---
+
+## 15. 参考資料
 
 - docs/specs/200-agent-orchestra.md
+- docs/specs/200-agent-api-keys.md
 - Kubernetes HPA Documentation
 - Chaos Engineering Principles
 - SRE Book - Load Testing
+- Google SRE Workbook - Load Testing
