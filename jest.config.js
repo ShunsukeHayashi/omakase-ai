@@ -3,9 +3,10 @@ export default {
   preset: 'ts-jest/presets/default-esm',
   testEnvironment: 'node',
   roots: ['<rootDir>/src'],
-  testMatch: ['**/types/*.test.ts'],
+  testMatch: ['**/*.test.ts'],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^uuid$': '<rootDir>/src/__mocks__/uuid.ts',
   },
   transform: {
     '^.+\\.tsx?$': [
@@ -15,6 +16,9 @@ export default {
       },
     ],
   },
+  transformIgnorePatterns: [
+    'node_modules/(?!(uuid)/)',
+  ],
   extensionsToTreatAsEsm: ['.ts'],
   collectCoverageFrom: [
     'src/**/*.ts',
