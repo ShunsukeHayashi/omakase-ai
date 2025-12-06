@@ -189,8 +189,8 @@ function buildRoleSection(agentType: string): string {
 /**
  * 動的にシステムプロンプトを生成
  */
-export function generateDynamicPrompt(config: DynamicPromptConfig): string {
-  const products = productStore.getAll();
+export function generateDynamicPrompt(config: DynamicPromptConfig, workspaceId: string = 'default'): string {
+  const products = productStore.getAll(workspaceId);
   const productContext = buildProductContext(products);
   const storeContext = config.storeContext ? buildStoreContext(config.storeContext) : '';
   const roleSection = buildRoleSection(config.agentType);
@@ -337,7 +337,7 @@ export function generateStoreContextFromUrl(url: string): StoreContext {
 /**
  * プロンプトのプレビュー生成（デバッグ用）
  */
-export function previewPrompt(config: DynamicPromptConfig): {
+export function previewPrompt(config: DynamicPromptConfig, workspaceId: string = 'default'): {
   prompt: string;
   stats: {
     totalLength: number;
@@ -346,8 +346,8 @@ export function previewPrompt(config: DynamicPromptConfig): {
     enabledFeatures: string[];
   };
 } {
-  const prompt = generateDynamicPrompt(config);
-  const products = productStore.getAll();
+  const prompt = generateDynamicPrompt(config, workspaceId);
+  const products = productStore.getAll(workspaceId);
 
   const enabledFeatures: string[] = [];
   if (config.enabledFeatures?.productSearch) enabledFeatures.push('productSearch');

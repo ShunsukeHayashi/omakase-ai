@@ -85,7 +85,7 @@ Claude Codeが文脈から自動的に適切なスキルを起動:
 
 ---
 
-## MCP統合（7サーバー）
+## MCP統合（12サーバー）
 
 `.claude/mcp.json` で定義:
 
@@ -98,6 +98,11 @@ Claude Codeが文脈から自動的に適切なスキルを起動:
 | `context-engineering` | AIコンテキスト最適化 |
 | `miyabi` | Miyabi CLI統合 |
 | `dev3000` | UI/UXデバッグ（83%時間削減） |
+| `gemini-image-gen` | Gemini AI画像生成・編集 |
+| `tradingview-webhook` | TradingViewアラート受信・分析 |
+| `gemini-slide-gen` | AIプレゼンテーション生成 |
+| `miyabi-tmux` | tmux Control Mode統合・リアルタイム監視 |
+| `miyabi-investment-society` | マルチエージェント投資分析・バックテスト |
 
 ---
 

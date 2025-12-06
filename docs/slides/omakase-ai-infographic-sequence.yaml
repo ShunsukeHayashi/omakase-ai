@@ -1,0 +1,270 @@
+# ==============================================================================
+# omakase.ai 事業計画 - 手書き風インフォグラフィックシーケンス
+# ==============================================================================
+
+visual_communication_format:
+  metadata:
+    format_name: "omakase.ai Business Plan - Hand-Drawn Infographic Sequence"
+    description: "EC向け音声AIショッピングアシスタントの事業計画を手書き風ビジュアルで解説"
+    target_audience: "投資家・経営層・パートナー候補"
+    language: "Japanese"
+
+  global_style_definition:
+    art_style:
+      primary_aesthetic: "Graphic Recording / Whiteboard Art"
+      texture_reference: "Marker pens, crayons, and colored pencils on paper texture"
+      overall_vibe: "Friendly, approachable, startup pitch deck feel"
+      imperfection_level: "Medium-High - human touch, not polished digital art"
+    color_palette:
+      background: "Clean white paper texture"
+      primary_colors:
+        text_and_outlines: "Black marker"
+        emphasis_attention: "Yellow / Orange accent"
+        structure_safety: "Blue / Green accent"
+        critical_warning: "Red accent"
+        brand_primary: "Purple / Indigo (omakase.ai brand)"
+
+  sequence_definition:
+    narrative_goal: "omakase.aiの事業価値と成長戦略を視覚的に伝える"
+    total_steps: 8
+
+  # ============================================================================
+  # スライド1: タイトル・プロダクト概要
+  # ============================================================================
+  slide_01_title:
+    image_id: "Step_01_Title"
+    concept_title: "omakase.ai - 声で買い物、新体験"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          中央に大きなスマートフォンの手書きイラスト。
+          画面からカラフルな音波が出ている。
+          音波の先に「カートに入れて」「おすすめ教えて」などの吹き出し。
+        supporting_elements: |
+          スマホの周りに小さなショッピングカート、商品アイコン（服、靴、食品）が浮かんでいる。
+          笑顔のスティックフィギュアがスマホに向かって話しかけている。
+        background_setting: "シンプルな白い紙のテクスチャ"
+        state_description: "活気がある、楽しげ、革新的"
+      text_elements:
+        main_labels:
+          - text: "omakase.ai"
+            attached_to: "画面上部、大きな手書きロゴ風"
+          - text: "声で買い物、新体験"
+            attached_to: "サブタイトル、中央"
+          - text: "EC向け音声AIショッピングアシスタント"
+            attached_to: "説明文、下部"
+        explanatory_annotation: "「話すだけ」でショッピングが完結する世界"
+
+  # ============================================================================
+  # スライド2: 課題提起 - EC事業者のペイン
+  # ============================================================================
+  slide_02_problem:
+    image_id: "Step_02_Problem"
+    concept_title: "EC事業者の悩み"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          困った顔のEC店長（スティックフィギュア）が頭を抱えている。
+          周りに「CVR 2.5%の壁」「カゴ落ち70%」「サポートコスト増」の
+          重い岩が圧し掛かっている様子。
+        supporting_elements: |
+          左側に下降する赤いグラフ（売上停滞）。
+          右側に上昇する赤いグラフ（コスト増）。
+          背景にうず高く積まれた問い合わせメールのアイコン。
+        background_setting: "薄いグレーの曇り空風の背景"
+        state_description: "ストレスフル、圧迫感、打開策を求めている"
+      text_elements:
+        main_labels:
+          - text: "CVR向上の限界"
+            attached_to: "大きな岩1"
+          - text: "カゴ落ち率70%"
+            attached_to: "大きな岩2"
+          - text: "サポート人件費↑"
+            attached_to: "大きな岩3"
+          - text: "広告費高騰"
+            attached_to: "上昇するコストグラフ"
+        explanatory_annotation: "従来の施策では限界... 新しいアプローチが必要"
+
+  # ============================================================================
+  # スライド3: ソリューション - omakase.aiの価値提案
+  # ============================================================================
+  slide_03_solution:
+    image_id: "Step_03_Solution"
+    concept_title: "omakase.aiが解決"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          スーパーヒーローのマント風のものを付けたAIアシスタントキャラクター
+          （フレンドリーなロボット風スティックフィギュア）が、
+          明るい光線を放って課題の岩を粉砕している。
+        supporting_elements: |
+          粉砕された岩から「CVR+35%」「カゴ落ち回収」「24時間自動対応」
+          のキラキラした結晶が飛び出している。
+          先ほど困っていた店長が笑顔でガッツポーズ。
+        background_setting: "明るい黄色のサンバースト効果"
+        state_description: "希望に満ちた、力強い、問題解決"
+      text_elements:
+        main_labels:
+          - text: "CVR +35%向上"
+            attached_to: "キラキラ結晶1、緑色強調"
+          - text: "カゴ落ち回収"
+            attached_to: "キラキラ結晶2、青色強調"
+          - text: "24時間AI対応"
+            attached_to: "キラキラ結晶3、紫色強調"
+          - text: "5分で導入"
+            attached_to: "キラキラ結晶4、オレンジ強調"
+        explanatory_annotation: "音声AIで、お客様の「欲しい」を逃さない"
+
+  # ============================================================================
+  # スライド4: 市場機会 - ブルーオーシャン
+  # ============================================================================
+  slide_04_market:
+    image_id: "Step_04_Market"
+    concept_title: "巨大市場、競合ゼロ"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          青い海（ブルーオーシャン）の手書きイラスト。
+          海の真ん中に「日本EC×音声AI」と書かれた宝の島。
+          島にはomakase.aiの旗が立っている（一番乗り）。
+        supporting_elements: |
+          海の遠くに小さな船（競合）がいるが、まだ島に到達していない。
+          島の上に「CAGR 28.3%」「2030年 $9.9B」の成長を示す上向き矢印。
+          周辺に市場規模を示す円グラフ。
+        background_setting: "青いグラデーション、海と空"
+        state_description: "広大、可能性に満ちた、先行者優位"
+      text_elements:
+        main_labels:
+          - text: "日本市場: 競合0社"
+            attached_to: "宝島の上、赤い星マーク"
+          - text: "2030年 $9.9B市場"
+            attached_to: "成長矢印の先"
+          - text: "CAGR 28.3%"
+            attached_to: "成長率バッジ"
+          - text: "今がチャンス！"
+            attached_to: "旗の横、オレンジ色"
+        explanatory_annotation: "日本のEC×音声AI = 完全なブルーオーシャン"
+
+  # ============================================================================
+  # スライド5: ビジネスモデル - 収益構造
+  # ============================================================================
+  slide_05_business_model:
+    image_id: "Step_05_BusinessModel"
+    concept_title: "シンプルな収益モデル"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          大きなパイチャート（円グラフ）の手書きイラスト。
+          SaaS 70%（青）、従量課金 15%（緑）、
+          カスタマイズ 10%（黄）、成果報酬 5%（赤）。
+        supporting_elements: |
+          パイチャートの周りに3つの料金プランボックス：
+          「Starter ¥3万」「Growth ¥8万」「Business ¥20万」。
+          各プランの下に対象顧客のスティックフィギュア。
+          コインが上から降ってくるアニメーション風。
+        background_setting: "シンプルな白背景、ビジネス資料風"
+        state_description: "明確、わかりやすい、安定感"
+      text_elements:
+        main_labels:
+          - text: "SaaS月額 70%"
+            attached_to: "パイチャート青部分"
+          - text: "従量課金 15%"
+            attached_to: "パイチャート緑部分"
+          - text: "LTV/CAC 16.7倍"
+            attached_to: "右上バッジ、金色"
+          - text: "Payback 2ヶ月"
+            attached_to: "右側メトリクス"
+        explanatory_annotation: "高収益率 × 低解約率 = 持続的成長"
+
+  # ============================================================================
+  # スライド6: 成長戦略 - フェーズ別ロードマップ
+  # ============================================================================
+  slide_06_roadmap:
+    image_id: "Step_06_Roadmap"
+    concept_title: "3年で市場リーダーへ"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          左から右に伸びる道路（ロードマップ）の手書きイラスト。
+          道路上に3つのマイルストーン旗：
+          「Year1 50社」「Year2 200社」「Year3 500社」。
+          道路はだんだん広くなり、上り坂（成長）を表現。
+        supporting_elements: |
+          各マイルストーンの下にARR数字：
+          「¥97M」「¥560M」「¥1.8B」。
+          道路の先にゴールの旗「市場リーダー」。
+          道路沿いにフェーズ名「PMF」「成長」「スケール」。
+        background_setting: "緑の丘陵地帯風、希望に満ちた風景"
+        state_description: "ダイナミック、成長、目標に向かう"
+      text_elements:
+        main_labels:
+          - text: "Year 1: ¥97M ARR"
+            attached_to: "最初の旗"
+          - text: "Year 2: ¥560M ARR"
+            attached_to: "2番目の旗"
+          - text: "Year 3: ¥1.8B ARR"
+            attached_to: "3番目の旗、大きく"
+          - text: "PMF→成長→スケール"
+            attached_to: "道路下のフェーズ名"
+        explanatory_annotation: "着実に、しかし大胆に成長"
+
+  # ============================================================================
+  # スライド7: 競争優位 - 防御壁
+  # ============================================================================
+  slide_07_moat:
+    image_id: "Step_07_Moat"
+    concept_title: "4つの防御壁"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          中世の城（omakase.ai城）を取り囲む4層の堀（モート）。
+          各堀にラベル：「データモート」「ネットワーク効果」
+          「ブランド信頼」「スイッチングコスト」。
+        supporting_elements: |
+          城の外側から攻めようとする小さな競合の船が、
+          堀に阻まれている様子。
+          城の上に「日本品質」「EC特化」の旗。
+          堀の水は青く輝いている。
+        background_setting: "中世ファンタジー風、でも親しみやすいタッチ"
+        state_description: "守りが固い、安心感、持続可能"
+      text_elements:
+        main_labels:
+          - text: "データモート"
+            attached_to: "最外周の堀、青"
+          - text: "ネットワーク効果"
+            attached_to: "2番目の堀、緑"
+          - text: "ブランド信頼"
+            attached_to: "3番目の堀、紫"
+          - text: "スイッチングコスト"
+            attached_to: "最内周の堀、オレンジ"
+        explanatory_annotation: "会話×購買データで模倣困難な資産を構築"
+
+  # ============================================================================
+  # スライド8: まとめ・CTA
+  # ============================================================================
+  slide_08_closing:
+    image_id: "Step_08_Closing"
+    concept_title: "その声が、売上になる"
+    prompt_description:
+      visual_elements:
+        main_subject_metaphor: |
+          大きなメガホン（音声のメタファー）から、
+          コイン、商品、ハートが飛び出している。
+          メガホンの色はomakase.aiブランドの紫/インディゴ。
+        supporting_elements: |
+          周りに笑顔のEC店長と、満足げな顧客のスティックフィギュア。
+          背景に上昇するグラフ、星、キラキラエフェクト。
+          「お問い合わせ」「無料トライアル」のボタン風要素。
+        background_setting: "明るく希望に満ちた、祝福ムード"
+        state_description: "達成感、ポジティブ、行動を促す"
+      text_elements:
+        main_labels:
+          - text: "「その声が、売上になる。」"
+            attached_to: "画面中央、大きな手書き文字"
+          - text: "omakase.ai"
+            attached_to: "ロゴ、下部"
+          - text: "無料トライアル実施中"
+            attached_to: "CTAボタン風、オレンジ"
+          - text: "5分で導入、成果を実感"
+            attached_to: "サブメッセージ"
+        explanatory_annotation: "日本のECを、音声AIで変える"

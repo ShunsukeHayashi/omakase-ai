@@ -1,0 +1,118 @@
+@startuml omakase-ai-architecture
+
+title omakase.ai - システムアーキテクチャ
+footer Generated 2025-12-06
+
+skinparam backgroundColor #FEFEFE
+skinparam component {
+    BackgroundColor<<external>> #E8F4FD
+    BackgroundColor<<internal>> #D4EDDA
+    BackgroundColor<<data>> #FFF3CD
+    BorderColor #333333
+}
+
+skinparam package {
+    BackgroundColor #F8F9FA
+    BorderColor #666666
+}
+
+skinparam node {
+    BackgroundColor #FFFFFF
+    BorderColor #333333
+}
+
+' ===== ブラウザ層 =====
+package "Browser (User)" {
+    [omakase.ai Widget] <<internal>> as Widget
+    [Microphone] as Mic
+    [Speaker] as Spk
+    [Product UI] as ProductUI
+    [Cart UI] as CartUI
+
+    Mic --> Widget : 音声入力
+    Widget --> Spk : 音声出力
+    Widget --> ProductUI : 商品表示
+    Widget --> CartUI : カート操作
+}
+
+' ===== 外部サービス層 =====
+package "External Services" {
+    node "VAPI" <<external>> {
+        [Vapi API] as VapiAPI
+        [Vapi Listener\n(STT)] as VapiListener
+        [Vapi Speaker\n(TTS)] as VapiSpeaker
+        [LLM Pipeline] as LLM
+        [Function Tools] as FuncTools
+
+        VapiListener --> LLM
+        LLM --> VapiSpeaker
+        LLM --> FuncTools
+    }
+
+    node "Daily.co" <<external>> {
+        [WebSocket\nSignaling] as DailyWS
+        [SFU\n(mediasoup)] as DailySFU
+        [ICE/TURN\nServers] as ICE
+
+        DailyWS --> DailySFU
+        DailySFU --> ICE
+    }
+
+    node "Clerk" <<external>> {
+        [Session\nManagement] as ClerkSession
+        [JWT\nTokens] as ClerkJWT
+
+        ClerkSession --> ClerkJWT
+    }
+
+    node "Microsoft Clarity" <<external>> {
+        [User Analytics] as Clarity
+    }
+}
+
+' ===== バックエンド層 =====
+package "omakase.ai Backend" {
+    node "Express.js Server" <<internal>> {
+        [Products API] as ProductsAPI
+        [Cart API] as CartAPI
+        [Knowledge API] as KnowledgeAPI
+        [Voice API] as VoiceAPI
+        [Scraper API] as ScraperAPI
+    }
+
+    database "In-Memory Store" <<data>> {
+        [Products] as ProductStore
+        [Carts] as CartStore
+        [FAQs] as FAQStore
+        [Store Context] as StoreContext
+    }
+
+    ProductsAPI --> ProductStore
+    CartAPI --> CartStore
+    KnowledgeAPI --> FAQStore
+    VoiceAPI --> StoreContext
+}
+
+' ===== 接続線 =====
+Widget --> VapiAPI : POST /call/web
+Widget --> DailyWS : WebSocket
+Widget --> DailySFU : WebRTC
+Widget --> ClerkSession : 認証
+Widget --> Clarity : 分析
+
+DailySFU <--> VapiListener : Audio Stream
+DailySFU <--> VapiSpeaker : Audio Stream
+
+FuncTools --> ProductsAPI : search_products
+FuncTools --> CartAPI : add_to_cart
+FuncTools --> KnowledgeAPI : search_faq
+
+' ===== 凡例 =====
+legend right
+  |= 色 |= 説明 |
+  | <#D4EDDA> | 独自開発 |
+  | <#E8F4FD> | 外部サービス |
+  | <#FFF3CD> | データストア |
+endlegend
+
+@enduml
