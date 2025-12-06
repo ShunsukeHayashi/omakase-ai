@@ -113,6 +113,14 @@
       ],
       "disabled": false,
       "description": "tmux Control Mode統合 - リアルタイムPane出力監視・セッション管理・コマンド実行"
+    },
+    "miyabi-investment-society": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/miyabi-investment-society/index.js"
+      ],
+      "disabled": false,
+      "description": "マルチエージェント投資分析 - テクニカル・ファンダメンタル・リスク分析・バックテスト・ポートフォリオ推奨"
     }
   }
 }
