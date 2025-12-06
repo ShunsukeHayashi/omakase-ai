@@ -4,12 +4,16 @@ import {
   CardBody,
   Input,
   Button,
-  Spinner,
   Chip,
   ScrollShadow,
+  Progress,
+  Tabs,
+  Tab,
+  Textarea,
 } from "@heroui/react";
 import { Icon } from "@iconify/react";
 import { motion, AnimatePresence } from "framer-motion";
+import { knowledgeApi, type ImportProgress, type KnowledgeSummary } from "../lib/api";
 
 export interface StoreContext {
   storeName: string;
@@ -51,50 +55,37 @@ export interface ContextResult {
   };
 }
 
-type StoreType = "general_ec" | "fashion" | "electronics" | "books_media" | "b2b_catalog";
+type ImportSource = "url" | "csv" | "json" | "shopify";
 
-const storeTypes: { key: StoreType; label: string; description: string; icon: string; color: string }[] = [
+const importSources: { key: ImportSource; label: string; description: string; icon: string; color: string }[] = [
   {
-    key: "general_ec",
-    label: "General EC",
-    description: "総合ECサイト",
-    icon: "lucide:store",
+    key: "url",
+    label: "URL Scrape",
+    description: "サイトから自動取得",
+    icon: "lucide:globe",
     color: "text-blue-500",
   },
   {
-    key: "fashion",
-    label: "Fashion",
-    description: "アパレル",
-    icon: "lucide:shirt",
-    color: "text-pink-500",
+    key: "csv",
+    label: "CSV Upload",
+    description: "CSVファイル",
+    icon: "lucide:file-spreadsheet",
+    color: "text-green-500",
   },
   {
-    key: "electronics",
-    label: "Electronics",
-    description: "家電・ガジェット",
-    icon: "lucide:cpu",
-    color: "text-cyan-500",
-  },
-  {
-    key: "books_media",
-    label: "Media",
-    description: "書籍・音楽",
-    icon: "lucide:book-open",
+    key: "json",
+    label: "JSON Import",
+    description: "JSONデータ",
+    icon: "lucide:file-json",
     color: "text-amber-500",
   },
   {
-    key: "b2b_catalog",
-    label: "B2B / Catalog",
-    description: "卸・カタログ",
-    icon: "lucide:building-2",
-    color: "text-slate-500",
+    key: "shopify",
+    label: "Shopify API",
+    description: "Shopify連携",
+    icon: "lucide:shopping-bag",
+    color: "text-emerald-500",
   },
-];
-
-const exampleUrls = [
-  "https://example.com/products",
-  "https://example.com/collections/new",
-  "https://example.com/shop",
 ];
 
 interface ECContextFormProps {
@@ -103,8 +94,24 @@ interface ECContextFormProps {
 }
 
 export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContextFormProps) => {
+  // Import source selection
+  const [importSource, setImportSource] = React.useState<ImportSource>("url");
+
+  // URL import state
   const [url, setUrl] = React.useState("");
-  const [storeType, setStoreType] = React.useState<StoreType>("general_ec");
+
+  // CSV/JSON file upload state
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [jsonText, setJsonText] = React.useState("");
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Shopify config state
+  const [shopifyDomain, setShopifyDomain] = React.useState("");
+  const [shopifyToken, setShopifyToken] = React.useState("");
+  const [shopifyLimit, setShopifyLimit] = React.useState(50);
+
+  // Common state
+  const [clearExisting, setClearExisting] = React.useState(false);
   const [isLoading, setIsLoading] = React.useState(false);
   const [isApplying, setIsApplying] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -112,40 +119,152 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
   const [result, setResult] = React.useState<ContextResult | null>(null);
   const [copied, setCopied] = React.useState(false);
 
+  // Import progress state
+  const [currentProgress, setCurrentProgress] = React.useState<ImportProgress | null>(null);
+  const [summary, setSummary] = React.useState<KnowledgeSummary | null>(null);
+
+  // Load summary on mount
+  React.useEffect(() => {
+    loadSummary();
+  }, []);
+
+  const loadSummary = async () => {
+    try {
+      const data = await knowledgeApi.getSummary();
+      if (data.success) {
+        setSummary(data.summary);
+      }
+    } catch (err) {
+      console.error("Failed to load summary:", err);
+    }
+  };
+
+  // Poll for progress updates
+  React.useEffect(() => {
+    if (!currentProgress || currentProgress.status === "completed" || currentProgress.status === "failed") {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const data = await knowledgeApi.getProgress(currentProgress.id);
+        if (data.success) {
+          setCurrentProgress(data.progress);
+          if (data.progress.status === "completed" || data.progress.status === "failed") {
+            setIsLoading(false);
+            loadSummary();
+          }
+        }
+      } catch (err) {
+        console.error("Failed to get progress:", err);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [currentProgress]);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setError(null);
+    }
+  };
+
   const handleSubmit = async () => {
-    if (!url.trim()) {
-      setError("URLを入力してください");
-      return;
-    }
-
-    try {
-      new URL(url);
-    } catch {
-      setError("有効なURLを入力してください");
-      return;
-    }
-
-    setIsLoading(true);
     setError(null);
-    setResult(null);
+    setIsLoading(true);
+    setCurrentProgress(null);
 
     try {
-      const response = await fetch("/api/prompts/from-url", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url, maxProducts: 50 }),
-      });
+      let progressId: string | null = null;
 
-      if (!response.ok) {
-        throw new Error("コンテキスト生成に失敗しました");
+      switch (importSource) {
+        case "url": {
+          if (!url.trim()) {
+            throw new Error("URLを入力してください");
+          }
+          try {
+            new URL(url);
+          } catch {
+            throw new Error("有効なURLを入力してください");
+          }
+          const urlResult = await knowledgeApi.importURL(url, 50, clearExisting);
+          if (urlResult.success) {
+            progressId = urlResult.progressId;
+            // URL import is synchronous, so we have the result immediately
+            setResult({
+              success: true,
+              storeContext: urlResult.storeContext as StoreContext,
+              productsCount: urlResult.productsCount,
+              products: urlResult.products,
+            });
+            onContextGenerated?.({
+              success: true,
+              storeContext: urlResult.storeContext as StoreContext,
+              productsCount: urlResult.productsCount,
+              products: urlResult.products,
+            });
+            setIsLoading(false);
+            loadSummary();
+          }
+          break;
+        }
+
+        case "csv": {
+          if (!selectedFile) {
+            throw new Error("CSVファイルを選択してください");
+          }
+          const csvResult = await knowledgeApi.importCSV(selectedFile, clearExisting);
+          if (csvResult.success) {
+            progressId = csvResult.progressId;
+          }
+          break;
+        }
+
+        case "json": {
+          if (!jsonText.trim()) {
+            throw new Error("JSONデータを入力してください");
+          }
+          let jsonData;
+          try {
+            jsonData = JSON.parse(jsonText);
+          } catch {
+            throw new Error("有効なJSONを入力してください");
+          }
+          const jsonResult = await knowledgeApi.importJSON(jsonData, clearExisting);
+          if (jsonResult.success) {
+            progressId = jsonResult.progressId;
+          }
+          break;
+        }
+
+        case "shopify": {
+          if (!shopifyDomain.trim() || !shopifyToken.trim()) {
+            throw new Error("ShopifyドメインとAccess Tokenを入力してください");
+          }
+          const shopifyResult = await knowledgeApi.importShopify({
+            shopDomain: shopifyDomain,
+            accessToken: shopifyToken,
+            limit: shopifyLimit,
+            clearExisting,
+          });
+          if (shopifyResult.success) {
+            progressId = shopifyResult.progressId;
+          }
+          break;
+        }
       }
 
-      const data = (await response.json()) as ContextResult;
-      setResult(data);
-      onContextGenerated?.(data);
+      // Start polling for progress if we have a progressId
+      if (progressId && importSource !== "url") {
+        const progressData = await knowledgeApi.getProgress(progressId);
+        if (progressData.success) {
+          setCurrentProgress(progressData.progress);
+        }
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
-    } finally {
       setIsLoading(false);
     }
   };
@@ -190,6 +309,11 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
     }
   };
 
+  const getProgressPercent = () => {
+    if (!currentProgress || currentProgress.totalItems === 0) return 0;
+    return Math.round((currentProgress.processedItems / currentProgress.totalItems) * 100);
+  };
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -198,32 +322,71 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
           Knowledge Import
         </h2>
         <p className="text-sm text-slate-500">
-          既存のECサイトから商品データとブランドトーンを自動学習します
+          商品データ、FAQ、ブランドトーンをインポートしてAIに学習させます
         </p>
       </div>
+
+      {/* Summary Card */}
+      {summary && (
+        <Card className="border border-slate-200 bg-gradient-to-br from-slate-50 to-white shadow-sm">
+          <CardBody className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-2 rounded-xl bg-slate-900 text-white">
+                  <Icon icon="lucide:database" className="text-xl" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-slate-900">{summary.store.name || "未設定"}</p>
+                  <p className="text-xs text-slate-500">Current Knowledge Base</p>
+                </div>
+              </div>
+              <div className="flex gap-4">
+                <div className="text-center">
+                  <p className="text-xl font-bold text-slate-900">{summary.products.total}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">Products</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-xl font-bold text-slate-900">{summary.faqs.total}</p>
+                  <p className="text-[10px] text-slate-400 uppercase tracking-wider">FAQs</p>
+                </div>
+                {summary.products.priceStats && (
+                  <div className="text-center">
+                    <p className="text-xl font-bold text-indigo-600">¥{summary.products.priceStats.avg.toLocaleString()}</p>
+                    <p className="text-[10px] text-slate-400 uppercase tracking-wider">Avg Price</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+      )}
 
       {/* Main Input Card */}
       <Card className="border border-slate-200 bg-white shadow-sm overflow-visible">
         <CardBody className="p-8 space-y-8">
-          
-          {/* 1. Store Type Selection */}
+
+          {/* 1. Import Source Selection */}
           <div className="space-y-3">
             <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
-              1. Select Store Type
+              1. Select Import Source
             </label>
             <ScrollShadow orientation="horizontal" className="pb-4 -mx-4 px-4">
               <div className="flex gap-4 min-w-max">
-                {storeTypes.map((type) => {
-                  const isActive = storeType === type.key;
+                {importSources.map((source) => {
+                  const isActive = importSource === source.key;
                   return (
                     <button
-                      key={type.key}
+                      key={source.key}
                       type="button"
-                      onClick={() => setStoreType(type.key)}
+                      onClick={() => {
+                        setImportSource(source.key);
+                        setError(null);
+                        setResult(null);
+                      }}
                       className={`
                         group relative flex flex-col items-center gap-3 rounded-2xl border-2 p-4 w-32 transition-all duration-200
-                        ${isActive 
-                          ? "border-slate-900 bg-slate-50 shadow-md scale-105 z-10" 
+                        ${isActive
+                          ? "border-slate-900 bg-slate-50 shadow-md scale-105 z-10"
                           : "border-slate-100 bg-white hover:border-slate-300 hover:shadow-sm"
                         }
                       `}
@@ -235,16 +398,16 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
                         `}
                       >
                         <Icon
-                          icon={type.icon}
-                          className={`text-2xl ${isActive ? type.color : "text-slate-400"}`}
+                          icon={source.icon}
+                          className={`text-2xl ${isActive ? source.color : "text-slate-400"}`}
                         />
                       </div>
                       <div className="text-center space-y-0.5">
                         <p className={`text-sm font-bold ${isActive ? "text-slate-900" : "text-slate-600"}`}>
-                          {type.label}
+                          {source.label}
                         </p>
                         <p className="text-[10px] text-slate-400 font-medium">
-                          {type.description}
+                          {source.description}
                         </p>
                       </div>
                       {isActive && (
@@ -259,56 +422,219 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
             </ScrollShadow>
           </div>
 
-          {/* 2. URL Input */}
+          {/* 2. Source-specific Input */}
           <div className="space-y-3">
-             <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
-              2. Enter Site URL
+            <label className="text-xs font-bold uppercase tracking-wider text-slate-400 ml-1">
+              2. Configure Import
             </label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
-                <Icon icon="lucide:globe" className="text-slate-400" />
-              </div>
-              <Input
-                placeholder="https://your-store.com/products"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                size="lg"
-                classNames={{
-                  input: "pl-8 text-slate-900 placeholder:text-slate-400",
-                  inputWrapper: "bg-slate-50 border-2 border-slate-200 hover:border-slate-300 group-focus-within:border-slate-900 group-focus-within:bg-white shadow-inner h-14 rounded-xl transition-all",
-                }}
-                isDisabled={isLoading}
-                endContent={
-                  <Button
-                    size="sm"
-                    className="bg-slate-900 text-white font-medium shadow-lg shadow-slate-900/20 min-w-[100px]"
-                    onPress={handleSubmit}
-                    isLoading={isLoading}
+
+            <Tabs
+              selectedKey={importSource}
+              onSelectionChange={(key) => setImportSource(key as ImportSource)}
+              classNames={{
+                tabList: "hidden",
+                panel: "p-0",
+              }}
+            >
+              {/* URL Input */}
+              <Tab key="url" title="URL">
+                <div className="space-y-3">
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none z-20">
+                      <Icon icon="lucide:globe" className="text-slate-400" />
+                    </div>
+                    <Input
+                      placeholder="https://your-store.com/products"
+                      value={url}
+                      onChange={(e) => setUrl(e.target.value)}
+                      size="lg"
+                      classNames={{
+                        input: "pl-8 text-slate-900 placeholder:text-slate-400",
+                        inputWrapper: "bg-slate-50 border-2 border-slate-200 hover:border-slate-300 group-focus-within:border-slate-900 group-focus-within:bg-white shadow-inner h-14 rounded-xl transition-all",
+                      }}
+                      isDisabled={isLoading}
+                    />
+                  </div>
+                  <p className="text-xs text-slate-400 ml-1">
+                    ECサイトのURLを入力すると、商品情報を自動でスクレイピングします
+                  </p>
+                </div>
+              </Tab>
+
+              {/* CSV Upload */}
+              <Tab key="csv" title="CSV">
+                <div className="space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  <div
+                    onClick={() => fileInputRef.current?.click()}
+                    className={`
+                      border-2 border-dashed rounded-xl p-8 text-center cursor-pointer transition-all
+                      ${selectedFile
+                        ? "border-green-300 bg-green-50"
+                        : "border-slate-200 bg-slate-50 hover:border-slate-300 hover:bg-white"
+                      }
+                    `}
                   >
-                    {isLoading ? "Analyzing..." : "Start Learning"}
-                  </Button>
-                }
-              />
-            </div>
-            
-            {/* Quick Examples */}
-            <div className="flex flex-wrap items-center gap-2 pl-1">
-              <span className="text-xs font-medium text-slate-400">Try:</span>
-              {exampleUrls.map((example) => (
-                <button
-                  key={example}
-                  type="button"
-                  className="text-xs text-slate-500 hover:text-slate-900 hover:underline underline-offset-2 transition-colors"
-                  onClick={() => {
-                    setUrl(example);
-                    setError(null);
-                  }}
-                >
-                  {example.replace("https://", "")}
-                </button>
-              ))}
-            </div>
+                    {selectedFile ? (
+                      <div className="flex items-center justify-center gap-3">
+                        <Icon icon="lucide:file-check" className="text-2xl text-green-500" />
+                        <div className="text-left">
+                          <p className="text-sm font-bold text-slate-900">{selectedFile.name}</p>
+                          <p className="text-xs text-slate-500">{(selectedFile.size / 1024).toFixed(1)} KB</p>
+                        </div>
+                        <Button
+                          isIconOnly
+                          size="sm"
+                          variant="flat"
+                          className="ml-2"
+                          onPress={() => setSelectedFile(null)}
+                        >
+                          <Icon icon="lucide:x" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Icon icon="lucide:upload-cloud" className="text-4xl text-slate-300 mx-auto" />
+                        <p className="text-sm font-medium text-slate-600">CSVファイルをドラッグ&ドロップ</p>
+                        <p className="text-xs text-slate-400">または クリックして選択</p>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-slate-400 ml-1">
+                    対応カラム: name, price, description, image_url, product_url, category
+                  </p>
+                </div>
+              </Tab>
+
+              {/* JSON Input */}
+              <Tab key="json" title="JSON">
+                <div className="space-y-3">
+                  <Textarea
+                    placeholder={`{
+  "products": [
+    { "name": "商品名", "price": 1000, "description": "説明" }
+  ],
+  "faqs": [
+    { "question": "質問", "answer": "回答" }
+  ],
+  "storeInfo": {
+    "name": "ストア名",
+    "description": "説明"
+  }
+}`}
+                    value={jsonText}
+                    onChange={(e) => setJsonText(e.target.value)}
+                    minRows={8}
+                    classNames={{
+                      input: "font-mono text-sm",
+                      inputWrapper: "bg-slate-50 border-2 border-slate-200",
+                    }}
+                    isDisabled={isLoading}
+                  />
+                  <p className="text-xs text-slate-400 ml-1">
+                    商品、FAQ、ストア情報をJSON形式で一括インポート
+                  </p>
+                </div>
+              </Tab>
+
+              {/* Shopify Config */}
+              <Tab key="shopify" title="Shopify">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Input
+                      label="Shop Domain"
+                      placeholder="your-store.myshopify.com"
+                      value={shopifyDomain}
+                      onChange={(e) => setShopifyDomain(e.target.value)}
+                      startContent={<Icon icon="lucide:store" className="text-slate-400" />}
+                      isDisabled={isLoading}
+                    />
+                    <Input
+                      label="Access Token"
+                      placeholder="shpat_xxxxx"
+                      type="password"
+                      value={shopifyToken}
+                      onChange={(e) => setShopifyToken(e.target.value)}
+                      startContent={<Icon icon="lucide:key" className="text-slate-400" />}
+                      isDisabled={isLoading}
+                    />
+                  </div>
+                  <Input
+                    label="Max Products"
+                    type="number"
+                    value={shopifyLimit.toString()}
+                    onChange={(e) => setShopifyLimit(parseInt(e.target.value) || 50)}
+                    className="max-w-[200px]"
+                    isDisabled={isLoading}
+                  />
+                  <p className="text-xs text-slate-400">
+                    Shopify Admin APIを使用して商品を直接取得します
+                  </p>
+                </div>
+              </Tab>
+            </Tabs>
           </div>
+
+          {/* Options */}
+          <div className="flex items-center gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={clearExisting}
+                onChange={(e) => setClearExisting(e.target.checked)}
+                className="rounded border-slate-300"
+              />
+              <span className="text-sm text-slate-600">既存データをクリア</span>
+            </label>
+          </div>
+
+          {/* Submit Button */}
+          <Button
+            size="lg"
+            className="w-full bg-slate-900 text-white font-bold shadow-lg shadow-slate-900/20"
+            onPress={handleSubmit}
+            isLoading={isLoading}
+            isDisabled={isLoading}
+          >
+            {isLoading ? "Importing..." : "Start Import"}
+          </Button>
+
+          {/* Progress Indicator */}
+          <AnimatePresence>
+            {currentProgress && currentProgress.status === "processing" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="space-y-3"
+              >
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-slate-600">
+                    {currentProgress.source.type.toUpperCase()} Import: {currentProgress.source.name}
+                  </span>
+                  <span className="font-mono text-slate-500">
+                    {currentProgress.processedItems} / {currentProgress.totalItems}
+                  </span>
+                </div>
+                <Progress
+                  value={getProgressPercent()}
+                  color="primary"
+                  className="h-2"
+                />
+                {currentProgress.errors.length > 0 && (
+                  <div className="text-xs text-amber-600">
+                    {currentProgress.failedItems} errors
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           {/* Error Message */}
           <AnimatePresence>
@@ -326,34 +652,26 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
               </motion.div>
             )}
           </AnimatePresence>
+
+          {/* Completed Progress */}
+          <AnimatePresence>
+            {currentProgress && currentProgress.status === "completed" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+              >
+                <div className="flex items-center gap-2 p-4 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-600">
+                  <Icon icon="lucide:check-circle" />
+                  <span className="text-sm font-medium">
+                    インポート完了: {currentProgress.successItems}件の商品を取り込みました
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </CardBody>
       </Card>
-
-      {/* Loading State */}
-      <AnimatePresence>
-        {isLoading && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex justify-center py-12"
-          >
-             <div className="relative flex flex-col items-center gap-6">
-                <div className="relative h-20 w-20">
-                  <div className="absolute inset-0 rounded-full border-4 border-slate-100"></div>
-                  <div className="absolute inset-0 rounded-full border-4 border-t-slate-900 border-r-transparent border-b-transparent border-l-transparent animate-spin"></div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Icon icon="lucide:brain-circuit" className="text-2xl text-slate-900 animate-pulse" />
-                  </div>
-                </div>
-                <div className="text-center space-y-1">
-                  <p className="text-lg font-semibold text-slate-900">Analyzing Store Structure...</p>
-                  <p className="text-sm text-slate-500">Extracting products, categories, and brand voice</p>
-                </div>
-             </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       {/* Results */}
       <AnimatePresence>
@@ -374,6 +692,8 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
                 onPress={() => {
                   setResult(null);
                   setUrl("");
+                  setSelectedFile(null);
+                  setJsonText("");
                 }}
               >
                 Clear Results
@@ -420,54 +740,56 @@ export const ECContextForm = ({ onContextGenerated, onContextApplied }: ECContex
             </Card>
 
             {/* Products Grid */}
-            <div className="space-y-3">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
-                Captured Products (Preview)
-              </h4>
-              <div className="grid grid-cols-2 gap-4">
-                {result.products.slice(0, 10).map((product) => (
-                  <motion.div
-                    key={product.id}
-                    whileHover={{ y: -4 }}
-                    transition={{ type: "spring", stiffness: 300 }}
-                  >
-                    <Card className="h-full border border-slate-200 bg-white hover:shadow-lg hover:shadow-slate-200/50 transition-all duration-300">
-                      <CardBody className="p-0">
-                        <div className="flex h-full">
-                          <div className="w-24 h-24 shrink-0 bg-slate-50 border-r border-slate-100 p-2 flex items-center justify-center">
-                             {product.imageUrl ? (
-                                <img
-                                  src={product.imageUrl}
-                                  alt={product.name}
-                                  className="w-full h-full object-contain mix-blend-multiply"
-                                  onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = "none";
-                                  }}
-                                />
-                              ) : (
-                                <Icon icon="lucide:image" className="text-slate-300 text-2xl" />
-                              )}
-                          </div>
-                          <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
-                            <div className="space-y-1">
-                              <p className="text-sm font-bold text-slate-900 truncate">
-                                {product.name}
-                              </p>
-                              <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
-                                {product.description || "No description available"}
+            {result.products.length > 0 && (
+              <div className="space-y-3">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-slate-400 px-1">
+                  Captured Products (Preview)
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  {result.products.slice(0, 10).map((product) => (
+                    <motion.div
+                      key={product.id}
+                      whileHover={{ y: -4 }}
+                      transition={{ type: "spring", stiffness: 300 }}
+                    >
+                      <Card className="h-full border border-slate-200 bg-white hover:shadow-lg hover:shadow-slate-200/50 transition-all duration-300">
+                        <CardBody className="p-0">
+                          <div className="flex h-full">
+                            <div className="w-24 h-24 shrink-0 bg-slate-50 border-r border-slate-100 p-2 flex items-center justify-center">
+                               {product.imageUrl ? (
+                                  <img
+                                    src={product.imageUrl}
+                                    alt={product.name}
+                                    className="w-full h-full object-contain mix-blend-multiply"
+                                    onError={(e) => {
+                                      (e.target as HTMLImageElement).style.display = "none";
+                                    }}
+                                  />
+                                ) : (
+                                  <Icon icon="lucide:image" className="text-slate-300 text-2xl" />
+                                )}
+                            </div>
+                            <div className="flex-1 p-3 flex flex-col justify-between min-w-0">
+                              <div className="space-y-1">
+                                <p className="text-sm font-bold text-slate-900 truncate">
+                                  {product.name}
+                                </p>
+                                <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                                  {product.description || "No description available"}
+                                </p>
+                              </div>
+                              <p className="text-sm font-bold text-indigo-600 mt-2">
+                                {formatPrice(product.price)}
                               </p>
                             </div>
-                            <p className="text-sm font-bold text-indigo-600 mt-2">
-                              {formatPrice(product.price)}
-                            </p>
                           </div>
-                        </div>
-                      </CardBody>
-                    </Card>
-                  </motion.div>
-                ))}
+                        </CardBody>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Prompt Stats */}
             {result.samplePrompt && (

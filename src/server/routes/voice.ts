@@ -98,7 +98,7 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
           language: language ?? 'Japanese',
           startMessage: startMessage || defaultAgentConfigs[agentType as AgentType]?.startMessage || 'こんにちは！',
           endMessage: endMessage || defaultAgentConfigs[agentType as AgentType]?.endMessage || 'ありがとうございました！',
-          storeContext,
+          storeContext: resolvedStoreContext,
           customRules,
           enabledFeatures: enabledFeatures || {
             productSearch: true,

@@ -1,5 +1,8 @@
 import type { StoreContext } from './prompt-generator.js';
 
+// Re-export for convenience
+export type { StoreContext };
+
 /**
  * Simple in-memory store context holder.
  * Centralizes the context so voice sessions and prompt endpoints share the same state.
