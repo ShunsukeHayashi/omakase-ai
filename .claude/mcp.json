@@ -73,6 +73,26 @@
       ],
       "disabled": false,
       "description": "dev3000 - UI/UX統合デバッグツール (サーバー・ブラウザ・ネットワーク統合ロギング、83%デバッグ時間削減)"
+    },
+    "gemini-image-gen": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/gemini-image-gen/index.js"
+      ],
+      "env": {
+        "GEMINI_API_KEY": "${GEMINI_API_KEY}",
+        "GEMINI_OUTPUT_DIR": "${GEMINI_OUTPUT_DIR}"
+      },
+      "disabled": false,
+      "description": "Gemini Image Generation - AI画像生成・編集ツール (generate_image, edit_image, describe_image)"
+    },
+    "tradingview-webhook": {
+      "command": "node",
+      "args": [
+        ".claude/mcp-servers/tradingview-webhook.js"
+      ],
+      "disabled": false,
+      "description": "TradingView Webhook受信サーバー - アラート受信・分析・miyabi-investment-society連携"
     }
   }
 }
