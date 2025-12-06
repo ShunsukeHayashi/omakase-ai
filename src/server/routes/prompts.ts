@@ -2,7 +2,7 @@
  * Dynamic Prompt Router - プロンプト動的生成API
  */
 
-import { Router, type Request } from 'express';
+import { Router, type Request, type Response } from 'express';
 import {
   generateDynamicPrompt,
   generateStoreContextFromUrl,
@@ -17,7 +17,8 @@ import { storeContextStore } from '../services/store-context.js';
 
 export const promptsRouter = Router();
 
-const MAX_PRODUCTS_LIMIT = 200;
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _MAX_PRODUCTS_LIMIT = 200;
 
 const getWorkspaceId = (req: Request): string => {
   const headerVal = req.headers['x-workspace-id'];
@@ -27,7 +28,8 @@ const getWorkspaceId = (req: Request): string => {
   return (headerVal as string)?.trim() || 'default';
 };
 
-const requireApiKey = (req: Request, res: any): boolean => {
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _requireApiKey = (req: Request, res: Response): boolean => {
   const apiKey = process.env.ADMIN_API_KEY;
   if (!apiKey) return true;
   const provided = req.headers['x-api-key'];

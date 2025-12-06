@@ -90,13 +90,16 @@ async function initializeProducts(): Promise<void> {
   }
 }
 
-server.listen(PORT, async () => {
+server.listen(PORT, () => {
+  // eslint-disable-next-line no-console
   console.log(`Omakase AI server running on port ${PORT}`);
+  // eslint-disable-next-line no-console
   console.log(`Widget: http://localhost:${PORT}`);
+  // eslint-disable-next-line no-console
   console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
 
   // 商品データを初期化
-  await initializeProducts();
+  void initializeProducts();
 });
 
 export { app, server, wss };

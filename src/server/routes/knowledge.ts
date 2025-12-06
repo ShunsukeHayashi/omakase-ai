@@ -34,7 +34,7 @@ const upload = multer({
  * POST /api/knowledge/import/csv
  * CSVファイルから商品をインポート
  */
-knowledgeRouter.post('/import/csv', upload.single('file'), async (req, res): Promise<void> => {
+knowledgeRouter.post('/import/csv', upload.single('file'), (req, res): void => {
   try {
     if (!req.file) {
       res.status(400).json({ error: 'CSV file is required' });
@@ -42,7 +42,7 @@ knowledgeRouter.post('/import/csv', upload.single('file'), async (req, res): Pro
     }
 
     const csvContent = req.file.buffer.toString('utf-8');
-    const clearExisting = req.body.clearExisting === 'true';
+    const clearExisting = (req.body as Record<string, unknown>).clearExisting === 'true';
 
     // インポート進捗を作成
     const progress = importProgressStore.create({
@@ -50,17 +50,18 @@ knowledgeRouter.post('/import/csv', upload.single('file'), async (req, res): Pro
       name: req.file.originalname,
     });
 
-    // 非同期でインポート実行
-    importFromCSV(csvContent, { clearExisting, progressId: progress.id }).then(result => {
-      console.log(`CSV import completed: ${result.imported} products`);
-    });
+    // インポート実行
+    const result = importFromCSV(csvContent, { clearExisting, progressId: progress.id });
+    // eslint-disable-next-line no-console
+    console.log(`CSV import completed: ${result.imported} products`);
 
     res.json({
       success: true,
       progressId: progress.id,
       message: 'Import started',
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
     console.error('CSV import error:', error);
     res.status(500).json({
       error: 'Failed to import CSV',
@@ -73,23 +74,24 @@ knowledgeRouter.post('/import/csv', upload.single('file'), async (req, res): Pro
  * POST /api/knowledge/import/json
  * JSONファイルから商品・FAQ・ストア情報をインポート
  */
-knowledgeRouter.post('/import/json', upload.single('file'), async (req, res): Promise<void> => {
+knowledgeRouter.post('/import/json', upload.single('file'), (req, res): void => {
   try {
     let jsonData: JSONProductData;
+    const body = req.body as Record<string, unknown>;
 
     if (req.file) {
       // ファイルアップロードの場合
       const content = req.file.buffer.toString('utf-8');
-      jsonData = JSON.parse(content);
-    } else if (req.body.data) {
+      jsonData = JSON.parse(content) as JSONProductData;
+    } else if (body.data) {
       // リクエストボディの場合
-      jsonData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+      jsonData = typeof body.data === 'string' ? JSON.parse(body.data) as JSONProductData : body.data as JSONProductData;
     } else {
       res.status(400).json({ error: 'JSON file or data is required' });
       return;
     }
 
-    const clearExisting = req.body.clearExisting === 'true' || req.body.clearExisting === true;
+    const clearExisting = body.clearExisting === 'true' || body.clearExisting === true;
 
     // インポート進捗を作成
     const progress = importProgressStore.create({
@@ -97,17 +99,18 @@ knowledgeRouter.post('/import/json', upload.single('file'), async (req, res): Pr
       name: req.file?.originalname || 'JSON data',
     });
 
-    // 非同期でインポート実行
-    importFromJSON(jsonData, { clearExisting, progressId: progress.id }).then(result => {
-      console.log(`JSON import completed: ${result.products} products, ${result.faqs} FAQs`);
-    });
+    // インポート実行
+    const result = importFromJSON(jsonData, { clearExisting, progressId: progress.id });
+    // eslint-disable-next-line no-console
+    console.log(`JSON import completed: ${result.products} products, ${result.faqs} FAQs`);
 
     res.json({
       success: true,
       progressId: progress.id,
       message: 'Import started',
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
     console.error('JSON import error:', error);
     res.status(500).json({
       error: 'Failed to import JSON',
@@ -120,7 +123,7 @@ knowledgeRouter.post('/import/json', upload.single('file'), async (req, res): Pr
  * POST /api/knowledge/import/shopify
  * Shopify APIから商品をインポート
  */
-knowledgeRouter.post('/import/shopify', async (req, res): Promise<void> => {
+knowledgeRouter.post('/import/shopify', (req, res): void => {
   try {
     const { shopDomain, accessToken, apiVersion, clearExisting, limit } = req.body as {
       shopDomain?: string;
@@ -148,11 +151,12 @@ knowledgeRouter.post('/import/shopify', async (req, res): Promise<void> => {
     });
 
     // 非同期でインポート実行
-    importFromShopify(config, {
+    void importFromShopify(config, {
       clearExisting,
       progressId: progress.id,
       limit,
     }).then(result => {
+      // eslint-disable-next-line no-console
       console.log(`Shopify import completed: ${result.imported} products`);
     });
 
@@ -161,7 +165,8 @@ knowledgeRouter.post('/import/shopify', async (req, res): Promise<void> => {
       progressId: progress.id,
       message: 'Import started',
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    // eslint-disable-next-line no-console
     console.error('Shopify import error:', error);
     res.status(500).json({
       error: 'Failed to import from Shopify',
@@ -445,7 +450,8 @@ knowledgeRouter.get('/summary', (_req, res): void => {
  * 全データをクリア
  */
 knowledgeRouter.delete('/clear', (req, res): void => {
-  const { products: clearProducts, faqs: clearFaqs, storeContext: clearStore } = req.query as {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { products: clearProducts, faqs: _clearFaqs, storeContext: clearStore } = req.query as {
     products?: string;
     faqs?: string;
     storeContext?: string;

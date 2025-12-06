@@ -4,7 +4,6 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import type { Product } from '../../types/index.js';
 import { productStore } from './store.js';
 import { knowledgeStore, type FAQ } from './knowledge.js';
 import { storeContextStore, type StoreContext } from './store-context.js';
@@ -228,10 +227,10 @@ function findColumn(headers: string[], candidates: string[]): number {
 /**
  * CSVから商品をインポート
  */
-export async function importFromCSV(
+export function importFromCSV(
   csvContent: string,
   options: { clearExisting?: boolean; progressId?: string } = {}
-): Promise<{ success: boolean; imported: number; errors: string[] }> {
+): { success: boolean; imported: number; errors: string[] } {
   const errors: string[] = [];
   let imported = 0;
 
@@ -310,10 +309,10 @@ export async function importFromCSV(
 /**
  * JSONから商品・FAQ・ストア情報をインポート
  */
-export async function importFromJSON(
+export function importFromJSON(
   jsonData: JSONProductData,
   options: { clearExisting?: boolean; progressId?: string } = {}
-): Promise<{ success: boolean; products: number; faqs: number; errors: string[] }> {
+): { success: boolean; products: number; faqs: number; errors: string[] } {
   const errors: string[] = [];
   let productsImported = 0;
   let faqsImported = 0;
@@ -520,7 +519,7 @@ export async function importFromShopify(
 function extractKeywords(text: string): string[] {
   // 簡易的なキーワード抽出（日本語対応）
   const words = text
-    .replace(/[。、！？「」『』（）\[\]【】]/g, ' ')
+    .replace(/[。、！？「」『』（）[\]【】]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length >= 2 && w.length <= 20);
 
