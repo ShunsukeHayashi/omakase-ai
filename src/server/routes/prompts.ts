@@ -14,6 +14,9 @@ import {
 import { scrapeProductsFromUrl } from '../services/scraper.js';
 import { productStore } from '../services/store.js';
 import { storeContextStore } from '../services/store-context.js';
+import { createLogger } from '../../lib/logger.js';
+
+const log = createLogger('prompts');
 
 export const promptsRouter = Router();
 
@@ -172,7 +175,7 @@ promptsRouter.post('/from-url', async (req, res): Promise<void> => {
       return;
     }
 
-    console.log(`Generating context from URL: ${url}`);
+    log.info('Generating context from URL', { url });
 
     // 1. URLからストアコンテキストを生成
     const storeContext = generateStoreContextFromUrl(url);

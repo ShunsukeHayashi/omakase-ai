@@ -19,6 +19,9 @@ import { knowledgeRouter } from './routes/knowledge.js';
 import { handleWebSocket } from './websocket/handler.js';
 import { ecScraperService } from './services/ec-scraper.js';
 import { productStore } from './services/store.js';
+import { createLogger } from '../lib/logger.js';
+
+const log = createLogger('server');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -60,11 +63,11 @@ async function initializeProducts(): Promise<void> {
   const maxProducts = parseInt(process.env.MAX_PRODUCTS || '50', 10);
 
   if (!storeUrl) {
-    console.log('STORE_URL not set, skipping product initialization');
+    log.info('STORE_URL not set, skipping product initialization');
     return;
   }
 
-  console.log(`Initializing products from: ${storeUrl}`);
+  log.info('Initializing products', { url: storeUrl });
 
   try {
     // 既存の商品をクリア
@@ -80,23 +83,24 @@ async function initializeProducts(): Promise<void> {
     const result = await ecScraperService.executeJob(job.id);
 
     if (result.success) {
-      console.log(`Loaded ${result.productsImported} products from ${storeUrl}`);
-      console.log(`Price range: ¥${result.summary.priceRange.min} - ¥${result.summary.priceRange.max}`);
+      log.info('Products loaded', {
+        count: result.productsImported,
+        priceRange: result.summary.priceRange,
+      });
     } else {
-      console.error('Failed to initialize products:', result.errors);
+      log.error('Failed to initialize products', { errors: result.errors });
     }
   } catch (error) {
-    console.error('Product initialization error:', error);
+    log.error('Product initialization error', { error });
   }
 }
 
 server.listen(PORT, () => {
-  // eslint-disable-next-line no-console
-  console.log(`Omakase AI server running on port ${PORT}`);
-  // eslint-disable-next-line no-console
-  console.log(`Widget: http://localhost:${PORT}`);
-  // eslint-disable-next-line no-console
-  console.log(`Dashboard: http://localhost:${PORT}/dashboard`);
+  log.info('Server started', {
+    port: PORT,
+    widget: `http://localhost:${PORT}`,
+    dashboard: `http://localhost:${PORT}/dashboard`,
+  });
 
   // 商品データを初期化
   void initializeProducts();

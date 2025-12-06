@@ -10,6 +10,9 @@ import { productStore } from '../services/store.js';
 import { cartStore } from '../services/cart.js';
 import { knowledgeStore } from '../services/knowledge.js';
 import { orderStore } from '../services/order.js';
+import { createLogger } from '../../lib/logger.js';
+
+const log = createLogger('websocket');
 
 interface AgentConfig {
   name: string;
@@ -57,7 +60,7 @@ const defaultConfig: AgentConfig = {
  */
 export function handleWebSocket(ws: WebSocket): void {
   const sessionId = Math.random().toString(36).substring(7);
-  console.log(`New WebSocket connection: ${sessionId}`);
+  log.info('New WebSocket connection', { sessionId });
 
   // セッション用のカートを作成
   const cart = cartStore.create();
@@ -88,7 +91,7 @@ export function handleWebSocket(ws: WebSocket): void {
   });
 
   ws.on('close', () => {
-    console.log(`WebSocket closed: ${sessionId}`);
+    log.info('WebSocket closed', { sessionId });
     if (session.openaiWs) {
       session.openaiWs.close();
     }
@@ -96,7 +99,7 @@ export function handleWebSocket(ws: WebSocket): void {
   });
 
   ws.on('error', (error) => {
-    console.error(`WebSocket error: ${sessionId}`, error);
+    log.error('WebSocket error', { sessionId, error });
   });
 
   // Send initial connection message
@@ -120,7 +123,7 @@ function handleMessage(
 
   // デバッグログ
   if (type !== 'input_audio_buffer.append') {
-    console.log('[Client →]', type);
+    log.debug('Client message', { type });
   }
 
   switch (type) {
@@ -207,7 +210,7 @@ function startVoiceSession(session: VoiceSession): void {
     session.openaiWs = openaiWs;
 
     openaiWs.on('open', () => {
-      console.log('Connected to OpenAI Realtime API');
+      log.info('Connected to OpenAI Realtime API');
 
       // セッション設定を送信
       const productContext = productStore.getProductContext();
@@ -451,16 +454,16 @@ function startVoiceSession(session: VoiceSession): void {
         const message = JSON.parse(dataStr) as Record<string, unknown>;
 
         // デバッグログ
-        console.log('[OpenAI →]', message.type);
+        log.debug('OpenAI message', { type: message.type });
 
         // エラーの場合は詳細を出力
         if (message.type === 'error') {
-          console.error('[OpenAI Error]', JSON.stringify(message, null, 2));
+          log.error('OpenAI error', { message });
         }
 
         // Function callの処理
         if (message.type === 'response.function_call_arguments.done') {
-          console.log('[Function Call]', message.name);
+          log.debug('Function call', { name: message.name });
           handleFunctionCall(session, message);
         }
 
@@ -472,7 +475,7 @@ function startVoiceSession(session: VoiceSession): void {
     });
 
     openaiWs.on('close', () => {
-      console.log('OpenAI WebSocket closed');
+      log.info('OpenAI WebSocket closed');
       session.ws.send(
         JSON.stringify({
           type: 'voice_session_ended',
@@ -481,7 +484,7 @@ function startVoiceSession(session: VoiceSession): void {
     });
 
     openaiWs.on('error', (error) => {
-      console.error('OpenAI WebSocket error:', error);
+      log.error('OpenAI WebSocket error', { error });
       session.ws.send(
         JSON.stringify({
           type: 'error',
@@ -490,7 +493,7 @@ function startVoiceSession(session: VoiceSession): void {
       );
     });
   } catch (error) {
-    console.error('Failed to start voice session:', error);
+    log.error('Failed to start voice session', { error });
     session.ws.send(
       JSON.stringify({
         type: 'error',
