@@ -1,22 +1,30 @@
 import type { StoreContext } from './prompt-generator.js';
 
+// Re-export for convenience
+export type { StoreContext };
+
+const DEFAULT_WORKSPACE = 'default';
+
 /**
- * Simple in-memory store context holder.
- * Centralizes the context so voice sessions and prompt endpoints share the same state.
+ * Workspace-aware store context holder.
  */
 class StoreContextStore {
-  private context: StoreContext | null = null;
+  private contexts: Map<string, StoreContext | null> = new Map();
 
-  set(context: StoreContext): void {
-    this.context = context;
+  set(context: StoreContext, workspaceId: string = DEFAULT_WORKSPACE): void {
+    this.contexts.set(workspaceId, context);
   }
 
-  get(): StoreContext | null {
-    return this.context;
+  get(workspaceId: string = DEFAULT_WORKSPACE): StoreContext | null {
+    return this.contexts.get(workspaceId) ?? null;
   }
 
-  clear(): void {
-    this.context = null;
+  clear(workspaceId?: string): void {
+    if (workspaceId) {
+      this.contexts.set(workspaceId, null);
+    } else {
+      this.contexts.clear();
+    }
   }
 }
 

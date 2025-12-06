@@ -15,6 +15,7 @@ import { productsRouter } from './routes/products.js';
 import { agentsRouter } from './routes/agents.js';
 import { promptsRouter } from './routes/prompts.js';
 import { scraperRouter } from './routes/scraper.js';
+import { knowledgeRouter } from './routes/knowledge.js';
 import { handleWebSocket } from './websocket/handler.js';
 import { ecScraperService } from './services/ec-scraper.js';
 import { productStore } from './services/store.js';
@@ -38,6 +39,7 @@ app.use('/api/products', productsRouter);
 app.use('/api/agents', agentsRouter);
 app.use('/api/prompts', promptsRouter);
 app.use('/api/scraper', scraperRouter);
+app.use('/api/knowledge', knowledgeRouter);
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -118,7 +118,7 @@ npm run agents:parallel:exec -- --help
 
 ## 🔌 MCP Servers
 
-Miyabiは **6つのMCPサーバー** を統合し、Claude Codeの機能を拡張しています。
+Miyabiは **12個のMCPサーバー** を統合し、Claude Codeの機能を拡張しています。
 
 ### 設定ファイル
 `.claude/mcp.json` に全MCPサーバーが定義されています。
@@ -133,6 +133,12 @@ Miyabiは **6つのMCPサーバー** を統合し、Claude Codeの機能を拡�
 | **Project Context** | 依存関係情報 | package.json解析、依存グラフ |
 | **Filesystem** | ファイルアクセス | ファイル読み書き、検索 |
 | **Context Engineering** | AIコンテキスト分析・最適化 | セマンティック検索、コンテキスト最適化、品質分析 |
+| **Gemini Slide Gen** | AIプレゼンテーション生成 | `generate_outline`, `generate_slides`, `export_presentation` |
+| **Gemini Image Gen** | AI画像生成・編集 | `generate_image`, `edit_image`, `describe_image` |
+| **Miyabi Tmux** | tmuxセッション制御 | `tmux_send_message`, `tmux_pane_capture`, `tmux_broadcast` |
+| **Miyabi Investment Society** | マルチエージェント投資分析 | `invest_analyze`, `invest_technical_analysis`, `invest_portfolio_analysis` |
+| **TradingView Webhook** | TradingViewアラート受信・分析 | アラート受信、自動分析、Investment Society連携 |
+| **dev3000** | UI/UXデバッグ | サーバー・ブラウザ・ネットワーク統合ログ |
 
 ### Miyabi Integration MCP の特徴
 
@@ -188,6 +194,66 @@ Context Engineering MCPは `http://localhost:8888` で動作するAPIサーバ�
 cd external/context-engineering-mcp
 uvicorn main:app --port 8888
 ```
+
+### Gemini Slide Gen MCP の特徴
+
+**目的**: AIによるプレゼンテーション資料の自動生成
+
+**提供ツール**:
+- `generate_outline` - トピックからスライド構成を生成
+- `generate_slides` - 各スライドのコンテンツ生成
+- `export_presentation` - Markdown/HTML/PDFエクスポート
+
+**使用例**:
+```
+あなた: "Miyabiプロジェクトの紹介スライドを作成して"
+Claude: [gemini-slide-gen を使用してスライド生成]
+```
+
+**環境変数**: `GEMINI_API_KEY`, `GEMINI_SLIDE_OUTPUT_DIR`
+
+### Miyabi Tmux MCP の特徴
+
+**目的**: マルチエージェント環境でのtmuxセッション制御
+
+**提供ツール**:
+- `tmux_list_sessions` - セッション一覧
+- `tmux_list_panes` - ペイン一覧
+- `tmux_send_message` - ペインへメッセージ送信
+- `tmux_pane_capture` - ペイン内容取得
+- `tmux_broadcast` - 全セッションへブロードキャスト
+- `tmux_join_commhub` - CommHubに参加
+
+**使用例**:
+```
+あなた: "他のAgentにタスク完了を通知して"
+Claude: [tmux_broadcast でメッセージ送信]
+```
+
+### Miyabi Investment Society MCP の特徴
+
+**目的**: マルチエージェント投資分析システム
+
+**提供ツール**:
+- `invest_market_overview` - 市場概況取得 (ばしょみるん)
+- `invest_screen_stocks` - 銘柄スクリーニング (えらぶん)
+- `invest_technical_analysis` - テクニカル分析 (ちゃーとみるん)
+- `invest_fundamental_analysis` - ファンダメンタル分析 (ざいむみるん)
+- `invest_risk_metrics` - リスク指標算出 (りすくみるん)
+- `invest_portfolio_analysis` - ポートフォリオ分析 (さいてきかくん)
+- `invest_analyze` - 総合分析 (とうしきるん)
+- `invest_news_stock` - 銘柄ニュース取得 (にゅーすあつめるん)
+
+**使用例**:
+```
+あなた: "AAPLの総合分析をして"
+Claude: [invest_analyze({ symbol: "AAPL", depth: "deep" }) を実行]
+
+あなた: "ポートフォリオのリスク評価をして"
+Claude: [invest_portfolio_analysis を実行]
+```
+
+**環境変数**: 不要（無料APIを使用）
 
 ### MCPサーバーの有効化/無効化
 
@@ -340,13 +406,13 @@ npx miyabi auto  # 全自動モード起動
 ## 📊 統計
 
 - **Agents**: 6種類（Coordinator + 5 Specialists）
-- **MCP Servers**: 6個
+- **MCP Servers**: 12個
 - **Slash Commands**: 10個
 - **Hooks**: 1個
 
 ---
 
-**最終更新**: 2025-10-09
+**最終更新**: 2025-12-06
 **管理**: Miyabi Autonomous System
 
 🌸 **Miyabi** - Beauty in Autonomous Development

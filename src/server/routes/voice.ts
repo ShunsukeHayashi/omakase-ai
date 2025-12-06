@@ -3,7 +3,7 @@
  * OpenAI Realtime API (WebRTC) 対応
  */
 
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import {
   type AgentType,
   type Language,
@@ -29,6 +29,12 @@ const voiceMapping: Record<string, string> = {
   'Ken (Japanese Male)': 'onyx',
 };
 
+const getWorkspaceId = (req: Request): string => {
+  const headerVal = req.headers['x-workspace-id'];
+  if (Array.isArray(headerVal)) return headerVal[0] || 'default';
+  return (headerVal as string)?.trim() || 'default';
+};
+
 // Request body types
 interface VoiceSessionInput {
   voice?: string;
@@ -49,6 +55,7 @@ interface VoiceSessionInput {
 voiceRouter.post('/session', async (req, res): Promise<void> => {
   try {
     const apiKey = process.env.OPENAI_API_KEY;
+    const workspaceId = getWorkspaceId(req);
 
     if (!apiKey) {
       res.status(500).json({ error: 'OpenAI API key not configured' });
@@ -72,7 +79,7 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
       enabledFeatures,
     } = body;
 
-    const resolvedStoreContext = storeContext || storeContextStore.get() || undefined;
+    const resolvedStoreContext = storeContext || storeContextStore.get(workspaceId) || undefined;
 
     const openaiVoice = voiceMapping[voice] ?? voice;
 
@@ -98,7 +105,7 @@ voiceRouter.post('/session', async (req, res): Promise<void> => {
           language: language ?? 'Japanese',
           startMessage: startMessage || defaultAgentConfigs[agentType as AgentType]?.startMessage || 'こんにちは！',
           endMessage: endMessage || defaultAgentConfigs[agentType as AgentType]?.endMessage || 'ありがとうございました！',
-          storeContext,
+          storeContext: resolvedStoreContext,
           customRules,
           enabledFeatures: enabledFeatures || {
             productSearch: true,

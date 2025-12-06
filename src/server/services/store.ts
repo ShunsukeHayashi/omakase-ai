@@ -1,23 +1,33 @@
 /**
- * In-Memory Product Store
+ * Workspace-aware in-memory Product Store
  * 本番環境ではDBに置き換え
  */
 
 import { v4 as uuidv4 } from 'uuid';
 import type { Product } from '../../types/index.js';
 
+const DEFAULT_WORKSPACE = 'default';
+
 class ProductStore {
-  private products: Map<string, Product> = new Map();
+  private stores: Map<string, Map<string, Product>> = new Map();
 
-  getAll(): Product[] {
-    return Array.from(this.products.values());
+  private getStore(workspaceId: string = DEFAULT_WORKSPACE): Map<string, Product> {
+    if (!this.stores.has(workspaceId)) {
+      this.stores.set(workspaceId, new Map());
+    }
+    return this.stores.get(workspaceId)!;
   }
 
-  get(id: string): Product | undefined {
-    return this.products.get(id);
+  getAll(workspaceId?: string): Product[] {
+    return Array.from(this.getStore(workspaceId).values());
   }
 
-  add(data: Partial<Product>): Product {
+  get(id: string, workspaceId?: string): Product | undefined {
+    return this.getStore(workspaceId).get(id);
+  }
+
+  add(data: Partial<Product>, workspaceId?: string): Product {
+    const store = this.getStore(workspaceId);
     const product: Product = {
       id: data.id || uuidv4(),
       name: data.name || 'Unnamed Product',
@@ -37,63 +47,63 @@ class ProductStore {
       product.lowStockThreshold = data.lowStockThreshold;
     }
 
-    this.products.set(product.id, product);
+    store.set(product.id, product);
     return product;
   }
 
-  update(id: string, data: Partial<Product>): Product | undefined {
-    const existing = this.products.get(id);
+  update(id: string, data: Partial<Product>, workspaceId?: string): Product | undefined {
+    const store = this.getStore(workspaceId);
+    const existing = store.get(id);
     if (!existing) return undefined;
 
     const updated: Product = {
       ...existing,
       ...data,
-      id: existing.id, // IDは変更不可
+      id: existing.id,
     };
 
-    this.products.set(id, updated);
+    store.set(id, updated);
     return updated;
   }
 
-  delete(id: string): boolean {
-    return this.products.delete(id);
+  delete(id: string, workspaceId?: string): boolean {
+    return this.getStore(workspaceId).delete(id);
   }
 
-  search(query: string): Product[] {
+  search(query: string, workspaceId?: string): Product[] {
     const lowerQuery = query.toLowerCase();
-    return this.getAll().filter(
+    return this.getAll(workspaceId).filter(
       (p) =>
         p.name.toLowerCase().includes(lowerQuery) ||
         p.description.toLowerCase().includes(lowerQuery)
     );
   }
 
-  clear(): void {
-    this.products.clear();
+  clear(workspaceId?: string): void {
+    if (workspaceId) {
+      this.getStore(workspaceId).clear();
+    } else {
+      this.stores.clear();
+    }
   }
 
-  /**
-   * 在庫数量を更新
-   */
-  updateStock(id: string, quantity: number): Product | undefined {
-    const product = this.products.get(id);
+  updateStock(id: string, quantity: number, workspaceId?: string): Product | undefined {
+    const store = this.getStore(workspaceId);
+    const product = store.get(id);
     if (!product) return undefined;
 
     product.stockQuantity = Math.max(0, quantity);
-    this.products.set(id, product);
+    store.set(id, product);
     return product;
   }
 
-  /**
-   * 在庫を減らす（購入時）
-   */
-  decrementStock(id: string, amount: number = 1): { success: boolean; product?: Product; error?: string } {
-    const product = this.products.get(id);
+  decrementStock(id: string, amount: number = 1, workspaceId?: string): { success: boolean; product?: Product; error?: string } {
+    const store = this.getStore(workspaceId);
+    const product = store.get(id);
     if (!product) {
       return { success: false, error: '商品が見つかりません' };
     }
 
-    // 在庫管理なしの場合は常に成功
     if (product.stockQuantity === undefined) {
       return { success: true, product };
     }
@@ -103,30 +113,24 @@ class ProductStore {
     }
 
     product.stockQuantity -= amount;
-    this.products.set(id, product);
+    store.set(id, product);
     return { success: true, product };
   }
 
-  /**
-   * 在庫を増やす（入荷時）
-   */
-  incrementStock(id: string, amount: number = 1): Product | undefined {
-    const product = this.products.get(id);
+  incrementStock(id: string, amount: number = 1, workspaceId?: string): Product | undefined {
+    const store = this.getStore(workspaceId);
+    const product = store.get(id);
     if (!product) return undefined;
 
     product.stockQuantity = (product.stockQuantity ?? 0) + amount;
-    this.products.set(id, product);
+    store.set(id, product);
     return product;
   }
 
-  /**
-   * 在庫状況を取得
-   */
-  getStockStatus(id: string): { inStock: boolean; quantity?: number; isLowStock: boolean; message: string } | undefined {
-    const product = this.products.get(id);
+  getStockStatus(id: string, workspaceId?: string): { inStock: boolean; quantity?: number; isLowStock: boolean; message: string } | undefined {
+    const product = this.getStore(workspaceId).get(id);
     if (!product) return undefined;
 
-    // 在庫管理なしの場合
     if (product.stockQuantity === undefined) {
       return {
         inStock: true,
@@ -157,29 +161,20 @@ class ProductStore {
     };
   }
 
-  /**
-   * 在庫切れ商品を取得
-   */
-  getOutOfStockProducts(): Product[] {
-    return this.getAll().filter(p => p.stockQuantity === 0);
+  getOutOfStockProducts(workspaceId?: string): Product[] {
+    return this.getAll(workspaceId).filter(p => p.stockQuantity === 0);
   }
 
-  /**
-   * 在庫少の商品を取得
-   */
-  getLowStockProducts(): Product[] {
-    return this.getAll().filter(p => {
+  getLowStockProducts(workspaceId?: string): Product[] {
+    return this.getAll(workspaceId).filter(p => {
       if (p.stockQuantity === undefined || p.stockQuantity === 0) return false;
       const threshold = p.lowStockThreshold ?? 5;
       return p.stockQuantity <= threshold;
     });
   }
 
-  /**
-   * 商品情報をLLM用のコンテキストとして整形
-   */
-  getProductContext(): string {
-    const products = this.getAll().filter((p) => p.isActive);
+  getProductContext(workspaceId?: string): string {
+    const products = this.getAll(workspaceId).filter((p) => p.isActive);
 
     if (products.length === 0) {
       return '現在、商品情報がありません。';
@@ -201,7 +196,7 @@ class ProductStore {
       })
       .join('\n\n');
 
-    return `【取り扱い商品一覧】\n\n${context}`;
+    return context;
   }
 }
 

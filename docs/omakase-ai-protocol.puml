@@ -1,0 +1,128 @@
+@startuml Omakase AI Voice Protocol Sequence
+
+title Omakase AI - VAPI/Daily.co Voice Call Protocol
+footer Generated from HAR analysis - 2025-12-06
+
+skinparam backgroundColor #FEFEFE
+skinparam sequence {
+    ArrowColor #333333
+    LifeLineBorderColor #666666
+    LifeLineBackgroundColor #F5F5F5
+    ParticipantBorderColor #333333
+    ParticipantBackgroundColor #E8F4FD
+    ActorBorderColor #333333
+}
+
+actor "User\n(Browser)" as User
+participant "Omakase\nWidget" as Widget
+participant "Clerk\nAuth" as Clerk
+participant "VAPI\nAPI" as VAPI
+participant "Daily.co\nSignaling" as DailyGS
+participant "Daily.co\nSFU\n(WebSocket)" as DailySFU
+participant "Vapi\nSpeaker" as VapiSpeaker
+participant "Vapi\nListener" as VapiListener
+
+== Authentication Phase ==
+
+User -> Widget: Click Start Call
+Widget -> Clerk: POST /sessions/{id}/touch
+Clerk --> Widget: 200 OK (session validated)
+
+== VAPI Call Initialization ==
+
+Widget -> VAPI: POST /call/web\n{\n  assistantId: "91eb9aaa-...",\n  assistantOverrides: {\n    variableValues: {\n      page_context: {...}\n    }\n  }\n}
+VAPI --> Widget: 201 Created\n{\n  id: "019af0ff-...",\n  webCallUrl: "https://vapi.daily.co/N9APRYpy...",\n  transport: {\n    provider: "daily",\n    roomDeleteOnUserLeaveEnabled: true\n  },\n  monitor: {\n    listenUrl: "wss://...",\n    controlUrl: "https://..."\n  }\n}
+
+== Daily.co Connection Setup ==
+
+Widget -> DailyGS: Load daily-js SDK\n(call-machine-object-bundle.js)
+DailyGS --> Widget: SDK loaded (v0.85.0)
+
+Widget -> DailyGS: POST /rooms/check/vapi/{roomId}\n{\n  aboutClient: {library: "daily-js", version: "0.85.0"},\n  sessionId: "1f10d149-..."\n}
+DailyGS --> Widget: 200 OK\n{\n  roomId: "4d1abb53-...",\n  sigAuthz: "eyJhbG...",\n  iceConfig: {\n    iceServers: [\n      {urls: ["stun:stun.cloudflare.com"]},\n      {urls: ["turn:turn.twilio.com"]}\n    ]\n  },\n  worker: {\n    wssUri: "wss://ip-129-154-201-67s-ap-seoul-1.wss.daily.co"\n  }\n}
+
+== WebSocket Signaling Connection ==
+
+Widget -> DailySFU: WSS Connect\n(Upgrade to WebSocket)
+DailySFU --> Widget: 101 Switching Protocols
+
+Widget -> DailySFU: join-for-sig\n{\n  mtgStr: "vapi/N9APRYpy...",\n  sessionId: "1f10d149-...",\n  sigAuthz: "eyJhbG...",\n  presence: {\n    callState: "passive",\n    browser: {name: "Chrome", version: 142}\n  }\n}
+
+DailySFU --> Widget: sig-ack\n{\n  topology: "sfu",\n  fullParticipantsCount: 1,\n  mtgSession: {id: "43f1e5a9-..."}\n}
+
+== WebRTC Transport Setup ==
+
+Widget -> DailySFU: create-transport\n{direction: "send"}
+Widget -> DailySFU: create-transport\n{direction: "recv"}
+
+DailySFU --> Widget: transportOptions (send)\n{\n  id: "42701608-...",\n  iceParameters: {...},\n  iceCandidates: [\n    {protocol: "udp", port: 43083},\n    {protocol: "tcp", port: 42675}\n  ],\n  dtlsParameters: {\n    fingerprints: [{algorithm: "sha-256", value: "..."}]\n  }\n}
+
+DailySFU --> Widget: transportOptions (recv)\n{id: "190d5227-...", ...}
+
+Widget -> DailySFU: connect-transport (send)\n{transportId: "42701608-...", dtlsParameters: {...}}
+DailySFU --> Widget: transportConnected
+
+== Audio Track Publishing ==
+
+Widget -> DailySFU: send-track\n{\n  transportId: "42701608-...",\n  kind: "audio",\n  rtpParameters: {\n    codecs: [{mimeType: "audio/opus", clockRate: 48000}],\n    encodings: [{ssrc: 2196480919}]\n  },\n  appData: {mediaTag: "cam-audio"}\n}
+
+DailySFU --> Widget: trackInfo\n{\n  mediaTag: "cam-audio",\n  producerId: "8c2d75f8-..."\n}
+
+== Vapi Agents Join ==
+
+DailySFU --> Widget: sig-presence (Vapi Speaker)\n{\n  id: "3cc995da-...",\n  name: "Vapi Speaker",\n  callState: "accepting-calls",\n  camInfo: {sfu: {id: "..."}}\n}
+
+DailySFU --> Widget: sig-presence (Vapi Listener)\n{\n  id: "480f5eee-...",\n  name: "Vapi Listener",\n  callState: "accepting-calls"\n}
+
+note over DailySFU: 3 participants:\n- User\n- Vapi Speaker\n- Vapi Listener
+
+== Audio Track Subscription ==
+
+DailySFU --> Widget: ptracks\n{\n  "3cc995da-...": ["cam-audio"]\n}
+
+Widget -> DailySFU: recv-track\n{\n  mediaTag: "cam-audio",\n  mediaPeerId: "3cc995da-...",\n  rtpCapabilities: {...}\n}
+
+DailySFU --> Widget: consumerParameters\n{\n  producerId: "b1151364-...",\n  consumerId: "3e8a11cb-...",\n  kind: "audio",\n  rtpParameters: {...}\n}
+
+Widget -> DailySFU: connect-transport (recv)
+DailySFU --> Widget: transportConnected
+
+Widget -> DailySFU: resume-consumer\n{consumerId: "3e8a11cb-..."}
+DailySFU --> Widget: consumerResumed
+
+== Voice Conversation Active ==
+
+VapiListener -> DailySFU: sig-msg\n{msgData: "listening"}
+
+VapiSpeaker -> DailySFU: sig-msg\n{\n  type: "status-update",\n  status: "in-progress"\n}
+
+VapiSpeaker -> DailySFU: sig-msg\n{\n  type: "speech-update",\n  status: "started",\n  role: "assistant",\n  turn: 0\n}
+
+DailySFU --> Widget: (broadcast speech-update)
+
+note over Widget, VapiSpeaker: Bidirectional audio streaming\nUser <-> Vapi Speaker
+
+loop Voice Conversation
+    User -> Widget: Speak (microphone)
+    Widget -> DailySFU: Audio RTP packets
+    DailySFU -> VapiListener: Forward audio
+    VapiListener -> VAPI: Process speech
+    VAPI -> VapiSpeaker: Generate response
+    VapiSpeaker -> DailySFU: Audio RTP packets
+    DailySFU -> Widget: Forward audio
+    Widget -> User: Play audio
+end
+
+== Token Refresh (Every ~45s) ==
+
+Widget -> Clerk: POST /sessions/{id}/tokens
+Clerk --> Widget: 200 OK (new JWT token)
+
+== Session End ==
+
+User -> Widget: End Call
+Widget -> DailySFU: Disconnect
+DailySFU --> Widget: Connection closed
+note over DailySFU: Room deleted\n(roomDeleteOnUserLeaveEnabled: true)
+
+@enduml

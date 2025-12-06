@@ -1,0 +1,7 @@
+\beamer@sectionintoc {1}{概要}{3}{0}{1}
+\beamer@sectionintoc {2}{技術スタック}{4}{0}{2}
+\beamer@sectionintoc {3}{プロトコル詳細}{7}{0}{3}
+\beamer@sectionintoc {4}{独自開発部分}{10}{0}{4}
+\beamer@sectionintoc {5}{競合分析}{12}{0}{5}
+\beamer@sectionintoc {6}{改善提案}{14}{0}{6}
+\beamer@sectionintoc {7}{まとめ}{17}{0}{7}

@@ -4,6 +4,7 @@ import { ConfigPanel } from "./components/config-panel";
 import { PreviewPhone } from "./components/preview-phone";
 import { AgentSelector, type AgentType } from "./components/agent-selector";
 import { ECContextForm, type ContextResult } from "./components/ec-context-form";
+import { PromptEditor } from "./components/prompt-editor";
 import { Button, Tabs, Tab, Card, CardBody, Chip, Divider } from "@heroui/react";
 import { Icon } from "@iconify/react";
 
@@ -18,6 +19,7 @@ type AgentConfig = {
   startMessage: string;
   endMessage: string;
   agentType?: string;
+  systemPrompt: string;
 };
 
 export default function App() {
@@ -37,6 +39,17 @@ export default function App() {
     startMessage: "こんにちは！お困りのことはありますか？",
     endMessage: "ありがとうございました。またいつでもお声がけください！",
     agentType: "shopping-guide",
+    systemPrompt: `You are {{name}}, a helpful AI shopping assistant for {{store_name}}.
+Your goal is to help customers find the perfect products based on their needs.
+
+Tone & Style:
+- {{personality}}
+- Be concise and polite.
+- Use emojis sparingly.
+
+Constraints:
+- Do not hallucinate products not in {{product_list}}.
+- If unsure, ask for clarification.`,
   });
 
   const updateConfig = (patch: Partial<AgentConfig>) => setConfig((c) => ({ ...c, ...patch }));
@@ -195,6 +208,15 @@ export default function App() {
                 }
               />
               <Tab
+                key="prompt"
+                title={
+                  <div className="flex items-center gap-2 px-2 pb-2">
+                    <Icon icon="lucide:terminal-square" className="text-lg" />
+                    <span>Prompt</span>
+                  </div>
+                }
+              />
+              <Tab
                 key="knowledge"
                 title={
                   <div className="flex items-center gap-2 px-2 pb-2">
@@ -260,6 +282,30 @@ export default function App() {
                 </div>
                 <Divider className="border-slate-100" />
                 <ConfigPanel value={config} onChange={updateConfig} />
+              </CardBody>
+            </Card>
+          )}
+
+          {activeTab === "prompt" && (
+            <Card className="border border-slate-200 bg-white">
+              <CardBody className="p-6 space-y-4">
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-500">
+                    Step 3
+                  </p>
+                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+                    <h2 className="text-xl font-semibold text-slate-900">プロンプトエンジニアリング</h2>
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Icon icon="lucide:wand-2" />
+                      Advanced Mode
+                    </div>
+                  </div>
+                </div>
+                <Divider className="border-slate-100" />
+                <PromptEditor
+                  value={config.systemPrompt}
+                  onChange={(v) => updateConfig({ systemPrompt: v })}
+                />
               </CardBody>
             </Card>
           )}
