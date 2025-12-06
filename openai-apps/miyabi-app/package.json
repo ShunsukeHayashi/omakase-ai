@@ -1,0 +1,32 @@
+{
+  "name": "miyabi-chatgpt-app",
+  "version": "1.0.0",
+  "description": "ChatGPT UI integration for Miyabi task execution",
+  "main": "dist/index.js",
+  "type": "module",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsx watch src/index.ts",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "uuid": "^9.0.0",
+    "openai": "^4.20.0"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/cors": "^2.8.17",
+    "@types/node": "^20.10.0",
+    "@types/uuid": "^9.0.7",
+    "typescript": "^5.3.0",
+    "tsx": "^4.6.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": ["miyabi", "chatgpt", "openai", "task-execution"],
+  "author": "Miyabi Team",
+  "license": "MIT"
+}
