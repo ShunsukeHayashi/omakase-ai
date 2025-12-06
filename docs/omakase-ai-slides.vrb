@@ -1,0 +1,35 @@
+\frametitle{WebRTC詳細}
+\begin{columns}
+    \begin{column}{0.5\textwidth}
+      \textbf{トランスポート設定}
+      \begin{itemize}
+        \item 送信 (send) + 受信 (recv)
+        \item ICE: Cloudflare STUN, Twilio TURN
+        \item DTLS暗号化
+      \end{itemize}
+
+      \vspace{0.5cm}
+      \textbf{音声トラック}
+      \begin{itemize}
+        \item コーデック: Opus 48kHz
+        \item メディアタグ: \texttt{cam-audio}
+        \item SSRC割り当て
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.5\textwidth}
+      \begin{block}{send-track メッセージ}
+        \begin{lstlisting}
+{
+  "transportId": "427...",
+  "kind": "audio",
+  "rtpParameters": {
+    "codecs": [{
+      "mimeType": "opus",
+      "clockRate": 48000
+    }]
+  }
+}
+        \end{lstlisting}
+      \end{block}
+    \end{column}
+  \end{columns}

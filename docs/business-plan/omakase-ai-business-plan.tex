@@ -1,0 +1,676 @@
+\documentclass[a4paper,11pt]{article}
+
+% Japanese support
+\usepackage{luatexja}
+\usepackage{luatexja-fontspec}
+\setmainjfont{Hiragino Kaku Gothic ProN}
+
+% Packages
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{fancyhdr}
+\usepackage{hyperref}
+\usepackage{tcolorbox}
+\usepackage{titlesec}
+
+% Page geometry
+\geometry{top=25mm, bottom=25mm, left=20mm, right=20mm}
+
+% Colors
+\definecolor{primary}{RGB}{37, 99, 235}
+\definecolor{secondary}{RGB}{59, 130, 246}
+\definecolor{accent}{RGB}{16, 185, 129}
+\definecolor{warning}{RGB}{245, 158, 11}
+\definecolor{danger}{RGB}{239, 68, 68}
+\definecolor{darkgray}{RGB}{55, 65, 81}
+\definecolor{lightgray}{RGB}{243, 244, 246}
+
+% Hyperref setup
+\hypersetup{
+    colorlinks=true,
+    linkcolor=primary,
+    urlcolor=secondary
+}
+
+% Header/Footer
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small\textcolor{darkgray}{omakase.ai Business Plan}}
+\fancyhead[R]{\small\textcolor{darkgray}{Confidential}}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.5pt}
+
+% Section styling
+\titleformat{\section}{\Large\bfseries\color{primary}}{\thesection}{1em}{}
+\titleformat{\subsection}{\large\bfseries\color{secondary}}{\thesubsection}{1em}{}
+\titleformat{\subsubsection}{\normalsize\bfseries\color{darkgray}}{\thesubsubsection}{1em}{}
+
+% Custom boxes
+\newtcolorbox{keypoint}{
+    colback=lightgray,
+    colframe=primary,
+    fonttitle=\bfseries,
+    title=Key Point
+}
+
+\newtcolorbox{highlight}{
+    colback=accent!10,
+    colframe=accent,
+    fonttitle=\bfseries
+}
+
+\begin{document}
+
+% Title Page
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+
+{\Huge\bfseries\textcolor{primary}{omakase.ai}\par}
+\vspace{0.5cm}
+{\Large\textcolor{secondary}{事業計画書}\par}
+\vspace{0.3cm}
+{\large Business Plan Document\par}
+
+\vspace{2cm}
+
+{\large EC向け音声AIショッピングアシスタント\par}
+{\large Voice AI Shopping Assistant for E-Commerce\par}
+
+\vspace{3cm}
+
+\begin{tcolorbox}[colback=lightgray, colframe=primary, width=0.8\textwidth]
+\centering
+\large
+\textbf{ポジショニング・Go to Market戦略}\\
+\textbf{開発プランニング・競合差別化戦略}
+\end{tcolorbox}
+
+\vspace{3cm}
+
+{\large Version 1.0\par}
+{\large 2025年12月6日\par}
+
+\vfill
+
+{\small Confidential - Internal Use Only\par}
+
+\end{titlepage}
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+%==============================================================================
+\section{エグゼクティブサマリー}
+%==============================================================================
+
+\subsection{プロダクト概要}
+
+omakase.aiは、ECサイト向けの\textbf{音声AIショッピングアシスタント}プラットフォームである。
+Webウィジェットとして簡単に導入でき、顧客は音声で商品検索、質問、カート操作が可能となる。
+
+\begin{keypoint}
+\textbf{USP（独自の価値提案）}\\
+「日本のEC事業者向けに、音声AIで購入転換率を\textbf{平均35\%向上}させる、EC特化型ショッピングアシスタント」
+\end{keypoint}
+
+\subsection{市場機会}
+
+\begin{center}
+\begin{tabular}{lrrr}
+\toprule
+\textbf{市場} & \textbf{2024年} & \textbf{2030年予測} & \textbf{CAGR} \\
+\midrule
+日本・音声コマース & \$2.47B & \$9.90B & \textbf{28.3\%} \\
+グローバル・音声コマース & \$43.7B & \$252.5B & 19.9\% \\
+グローバル・会話型AI & \$11.58B & \$41.39B & 23.7\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\begin{highlight}
+\textbf{重要な発見}: 日本市場においてEC特化音声AIの競合は\textbf{0社}（ブルーオーシャン）
+\end{highlight}
+
+\subsection{3年成長シナリオ}
+
+\begin{center}
+\begin{tabular}{lrrrr}
+\toprule
+\textbf{指標} & \textbf{Year 1} & \textbf{Year 2} & \textbf{Year 3} \\
+\midrule
+顧客数 & 50社 & 200社 & 500社 \\
+MRR & ¥13.5M & ¥56M & ¥167M \\
+ARR & ¥97M & ¥560M & ¥1,874M \\
+チャーン率 & 6\% & 3\% & 2\% \\
+営業利益率 & -20\% & +24\% & +40\% \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+%==============================================================================
+\section{市場分析}
+%==============================================================================
+
+\subsection{TAM/SAM/SOM分析}
+
+\subsubsection{TAM（Total Addressable Market）}
+
+\begin{itemize}
+    \item \textbf{グローバル音声コマース市場}: 2030年 \$252.5B
+    \item \textbf{グローバル会話型AI市場}: 2030年 \$41.39B
+\end{itemize}
+
+\subsubsection{SAM（Serviceable Available Market）}
+
+\begin{itemize}
+    \item \textbf{日本EC市場}: 年間約22兆円
+    \item \textbf{日本音声コマース}: 2030年 \$9.90B（約1.5兆円）
+    \item \textbf{EC向けAIツール市場}: 約2,000億円
+\end{itemize}
+
+\subsubsection{SOM（Serviceable Obtainable Market）}
+
+\begin{itemize}
+    \item \textbf{ターゲット}: 日本EC事業者 約3万サイト
+    \item \textbf{3年後目標}: 500-1,000サイト（1.7-3.3\%シェア）
+    \item \textbf{推定ARR}: ¥1.2B-2.4B
+\end{itemize}
+
+\subsection{市場トレンド}
+
+\begin{enumerate}
+    \item \textbf{Conversational Commerce成長}: 年率20\%以上で成長
+    \item \textbf{Voice AI採用拡大}: スマートスピーカー普及率30\%超
+    \item \textbf{EC事業者のAI投資増加}: CVR改善への投資意欲高
+    \item \textbf{人手不足}: カスタマーサポート人材の確保困難
+\end{enumerate}
+
+\subsection{競合状況}
+
+\begin{center}
+\begin{tabular}{lccccc}
+\toprule
+\textbf{機能} & \textbf{omakase.ai} & \textbf{VAPI} & \textbf{Pipecat} & \textbf{Rep AI} & \textbf{Retell} \\
+\midrule
+音声対話 & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ & $\checkmark$ \\
+Webウィジェット & $\checkmark$ & - & - & $\checkmark$ & - \\
+EC特化 & $\checkmark$ & - & - & $\checkmark$ & - \\
+日本語 & $\checkmark$ & $\checkmark$ & $\checkmark$ & ? & $\checkmark$ \\
+カート統合 & $\checkmark$ & - & - & $\checkmark$ & - \\
+OSS & - & - & $\checkmark$ & - & - \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+%==============================================================================
+\section{ポジショニング戦略}
+%==============================================================================
+
+\subsection{ポジショニングマップ}
+
+omakase.aiは「\textbf{EC特化度}」と「\textbf{サービスレベル}」の2軸において、
+市場の空白地帯を狙う。
+
+\begin{center}
+\begin{tikzpicture}
+    % Axes
+    \draw[->] (0,0) -- (10,0) node[right] {EC特化度};
+    \draw[->] (0,0) -- (0,7) node[above] {サービスレベル};
+
+    % Grid labels
+    \node at (1,-0.5) {汎用};
+    \node at (9,-0.5) {EC特化};
+    \node at (-1.2,1) {セルフ};
+    \node at (-1.2,6) {フル};
+
+    % Competitors
+    \fill[secondary] (2,2) circle (0.3) node[right, xshift=5pt] {VAPI};
+    \fill[secondary] (3,1.5) circle (0.3) node[right, xshift=5pt] {Pipecat};
+    \fill[secondary] (2.5,3) circle (0.3) node[right, xshift=5pt] {Retell};
+    \fill[warning] (8,5.5) circle (0.3) node[right, xshift=5pt] {Rep AI};
+
+    % omakase.ai
+    \fill[accent] (8,4) circle (0.4) node[right, xshift=5pt] {\textbf{omakase.ai}};
+
+    % White space annotation
+    \draw[dashed, primary, thick] (6,2.5) rectangle (9,5);
+    \node[primary] at (7.5,1.8) {White Space};
+\end{tikzpicture}
+\end{center}
+
+\subsection{3つの差別化軸}
+
+\begin{enumerate}
+    \item \textbf{EC販売最適化}: 汎用AIではなく「ECで売る」に特化
+    \item \textbf{日本市場特化}: 日本語敬語、日本の商習慣、コンプライアンス対応
+    \item \textbf{即導入可能}: 5分実装、エンジニア不要
+\end{enumerate}
+
+\subsection{価値提案（Value Proposition）}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{顧客の課題} & \textbf{omakase.aiの解決策} \\
+\midrule
+CVR向上の限界（2.5\%の壁） & 音声AIで+35\%のCVR改善 \\
+カスタマーサポートコスト増 & 24時間自動対応で人件費削減 \\
+カゴ落ち率の高さ（70\%） & リアルタイム音声アシストで回収 \\
+技術導入のハードル & 5分で導入、コード不要 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+%==============================================================================
+\section{Go-to-Market戦略}
+%==============================================================================
+
+\subsection{フェーズ別戦略}
+
+\subsubsection{Phase 1: MVP/PMF検証（3-4ヶ月）}
+
+\begin{itemize}
+    \item \textbf{目標}: ベータ顧客5社でPMF検証
+    \item \textbf{ターゲット}: Shopify利用のD2Cブランド
+    \item \textbf{KPI}: CVR +15\%の実証
+    \item \textbf{チャネル}: 直接アプローチ、紹介
+\end{itemize}
+
+\subsubsection{Phase 2: 初期顧客獲得（3-4ヶ月）}
+
+\begin{itemize}
+    \item \textbf{目標}: 有料顧客30社、MRR ¥1.5M
+    \item \textbf{ターゲット}: 中規模EC（年商1億-50億円）
+    \item \textbf{チャネル}: コンテンツマーケ30\%、パートナー25\%、有料広告20\%
+\end{itemize}
+
+\subsubsection{Phase 3: スケール（6ヶ月〜）}
+
+\begin{itemize}
+    \item \textbf{目標}: 150社、MRR ¥9M
+    \item \textbf{ターゲット}: BASE/STORES拡大、エンタープライズ開拓
+    \item \textbf{チャネル}: Shopifyアプリストア、システムインテグレーター
+\end{itemize}
+
+\subsection{プライシング戦略}
+
+\begin{center}
+\begin{tabular}{lrrll}
+\toprule
+\textbf{プラン} & \textbf{月額} & \textbf{対話数} & \textbf{対象} & \textbf{ROI} \\
+\midrule
+Starter & ¥30,000 & 1,000 & 小規模EC & 54x \\
+Growth & ¥80,000 & 3,000 & 中規模EC & 27x \\
+Business & ¥200,000 & 10,000 & 大規模EC & 45x \\
+Enterprise & 要相談 & 無制限 & エンタープライズ & - \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{チャネル戦略}
+
+\begin{center}
+\begin{tikzpicture}
+    \pie[
+        text=legend,
+        radius=2.5,
+        color={primary!80, secondary!80, accent!80, warning!80, danger!60}
+    ]{
+        30/コンテンツマーケティング,
+        25/パートナー経由,
+        20/有料広告,
+        15/イベント・展示会,
+        10/紹介プログラム
+    }
+\end{tikzpicture}
+\end{center}
+
+\newpage
+%==============================================================================
+\section{開発ロードマップ}
+%==============================================================================
+
+\subsection{フェーズ別開発計画}
+
+\subsubsection{Phase 1: MVP（3-4ヶ月）}
+
+\begin{itemize}
+    \item 音声AIアシスタント基盤
+    \item Widget UI
+    \item Shopify連携
+    \item 管理ダッシュボード（基本）
+    \item EC特化プロンプト設計
+\end{itemize}
+
+\textbf{技術スタック}: VAPI, Daily.co WebRTC, Express.js, React
+
+\subsubsection{Phase 2: Growth（3-4ヶ月）}
+
+\begin{itemize}
+    \item PostgreSQL導入（In-Memoryから移行）
+    \item 分析ダッシュボード強化
+    \item 業種別プロンプトテンプレート
+    \item A/Bテスト基盤
+    \item BASE/STORES連携
+\end{itemize}
+
+\subsubsection{Phase 3: Scale（6ヶ月）}
+
+\begin{itemize}
+    \item Pipecat検証・移行（コスト37\%削減）
+    \item パフォーマンス最適化
+    \item マルチテナント対応
+    \item LINE連携
+\end{itemize}
+
+\subsubsection{Phase 4: Platform（6ヶ月）}
+
+\begin{itemize}
+    \item 自社LLM Fine-tuning
+    \item SDK公開
+    \item マーケットプレイス構築
+\end{itemize}
+
+\subsection{技術KPI}
+
+\begin{center}
+\begin{tabular}{lcccc}
+\toprule
+\textbf{指標} & \textbf{Phase 1} & \textbf{Phase 2} & \textbf{Phase 3} & \textbf{Phase 4} \\
+\midrule
+稼働率 & 99.5\% & 99.7\% & 99.9\% & 99.99\% \\
+レスポンス時間 & <5秒 & <4秒 & <3秒 & <2秒 \\
+同時接続数 & 100 & 500 & 2,000 & 10,000 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+%==============================================================================
+\section{競合差別化戦略}
+%==============================================================================
+
+\subsection{持続可能な競争優位の構築}
+
+\subsubsection{短期的差別化（0-6ヶ月）}
+
+\begin{itemize}
+    \item \textbf{5分導入Widget}: 導入障壁の排除
+    \item \textbf{成果報酬型価格}: リスクリバーサル
+    \item \textbf{日本語最適化}: 敬語、方言対応
+\end{itemize}
+
+\subsubsection{中期的差別化（6-12ヶ月）}
+
+\begin{itemize}
+    \item \textbf{LINE連携}: 日本固有チャネル対応
+    \item \textbf{物流API統合}: ヤマト/佐川の配送日時指定
+    \item \textbf{業界特化プロンプトライブラリ}: 10業種対応
+\end{itemize}
+
+\subsubsection{長期的差別化（1-2年）}
+
+\begin{itemize}
+    \item \textbf{会話×購買データ}: 独自モデル開発
+    \item \textbf{ECプラットフォームOEM}: B2B提供
+    \item \textbf{B2B市場展開}: 高単価エンタープライズ
+\end{itemize}
+
+\subsection{4つの防御壁}
+
+\begin{center}
+\begin{tabular}{ll}
+\toprule
+\textbf{防御メカニズム} & \textbf{具体施策} \\
+\midrule
+ネットワーク効果 & 共有インテントライブラリ（導入店舗増=AI精度向上） \\
+データモート & 会話→購買データの蓄積（教師データ資産化） \\
+ブランド & 日本品質、ISMAP/Pマーク、日本語サポート \\
+スイッチングコスト & オペレーション統合（解約=人員補充必要） \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{VAPI依存リスク対策}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{期間} & \textbf{戦略} & \textbf{具体策} \\
+\midrule
+短期 & 関係強化 & Japan Gateway戦略（日本市場パートナー） \\
+中期 & マルチベンダー & 抽象化レイヤー（Voice Router）で複数対応 \\
+長期 & ハイブリッド & 自社モデル併用、買収/提携検討 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\newpage
+%==============================================================================
+\section{ターゲットペルソナ}
+%==============================================================================
+
+\subsection{B2B 導入決定者}
+
+\subsubsection{ペルソナ1: ECマーケティング責任者（最優先）}
+
+\begin{itemize}
+    \item \textbf{属性}: 35-45歳、年商10-50億円EC企業
+    \item \textbf{課題}: CVR向上の限界、広告費高騰
+    \item \textbf{ゴール}: 売上20\%増、差別化施策
+    \item \textbf{決定要因}: ROI実証、導入の簡単さ
+    \item \textbf{支払意思額}: ¥20-50万円/月
+\end{itemize}
+
+\subsubsection{ペルソナ2: EC技術責任者}
+
+\begin{itemize}
+    \item \textbf{属性}: 30-40歳、エンジニアバックグラウンド
+    \item \textbf{課題}: 人手不足、新技術評価の時間不足
+    \item \textbf{ゴール}: 安定運用、セキュリティ確保
+    \item \textbf{決定要因}: 技術仕様、API品質、サポート体制
+\end{itemize}
+
+\subsubsection{ペルソナ3: EC事業経営者}
+
+\begin{itemize}
+    \item \textbf{属性}: 40-55歳、D2C/小売経営者
+    \item \textbf{課題}: 競合との差別化、人件費増
+    \item \textbf{ゴール}: 利益率改善、ブランド価値向上
+    \item \textbf{決定要因}: 投資対効果、市場でのポジショニング
+\end{itemize}
+
+\subsection{B2C エンドユーザー}
+
+\subsubsection{ペルソナ4: デジタルネイティブ主婦}
+
+\begin{itemize}
+    \item \textbf{属性}: 30-40歳、子育て中
+    \item \textbf{利用シーン}: 料理中、育児中のハンズフリー買い物
+    \item \textbf{価値}: 時短、便利さ
+\end{itemize}
+
+\subsubsection{ペルソナ5: ガジェット好き若手社会人}
+
+\begin{itemize}
+    \item \textbf{属性}: 25-35歳、新しいもの好き
+    \item \textbf{利用シーン}: 通勤中、就寝前
+    \item \textbf{価値}: 新体験、効率性
+\end{itemize}
+
+\newpage
+%==============================================================================
+\section{収益モデル}
+%==============================================================================
+
+\subsection{ハイブリッド収益モデル}
+
+\begin{center}
+\begin{tikzpicture}
+    \pie[
+        text=legend,
+        radius=2.5,
+        color={primary!90, secondary!80, accent!70, warning!60}
+    ]{
+        70/SaaSサブスク,
+        15/従量課金（超過分）,
+        10/カスタマイズ開発,
+        5/成果報酬
+    }
+\end{tikzpicture}
+\end{center}
+
+\subsection{Unit Economics}
+
+\begin{center}
+\begin{tabular}{lrl}
+\toprule
+\textbf{指標} & \textbf{数値} & \textbf{評価} \\
+\midrule
+LTV & ¥2,000,000 & - \\
+CAC & ¥120,000 & - \\
+LTV/CAC & 16.7x & Excellent（5x以上が優秀） \\
+Payback期間 & 2.0ヶ月 & Very Good（12ヶ月以内が理想） \\
+Rule of 40 & 500\% & Excellent（40\%以上が健全） \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{損益分岐点分析}
+
+\begin{itemize}
+    \item \textbf{損益分岐点}: Year 2 Q2で黒字転換
+    \item \textbf{必要顧客数}: 約80社
+    \item \textbf{必要MRR}: ¥8.7M
+\end{itemize}
+
+\newpage
+%==============================================================================
+\section{実行計画}
+%==============================================================================
+
+\subsection{直近3ヶ月のアクションプラン}
+
+\subsubsection{Month 1: 準備}
+
+\begin{itemize}
+    \item GTM戦略の社内共有
+    \item マーケティング責任者採用
+    \item ベータ募集LP作成
+    \item CRM/MAツール選定
+\end{itemize}
+
+\subsubsection{Month 2: ベータ開始}
+
+\begin{itemize}
+    \item ベータ顧客5社確定
+    \item オンボーディング実施
+    \item A/Bテスト開始
+\end{itemize}
+
+\subsubsection{Month 3: PMF検証}
+
+\begin{itemize}
+    \item データ分析
+    \item PMFスコアカード作成
+    \item Phase 2移行判断
+\end{itemize}
+
+\subsection{今すぐ実行すべきTOP 10}
+
+\begin{enumerate}
+    \item 抽象化レイヤー（Voice Router）設計
+    \item カゴ落ち×音声の実証実験
+    \item 5分導入動画作成
+    \item LINE連携プロトタイプ
+    \item 商標・ドメイン防衛
+    \item カスタマーサクセス採用
+    \item B2B企業ヒアリング
+    \item VAPIパートナーシップ交渉
+    \item 日本固有語彙辞書整備
+    \item セキュリティチェックシート作成
+\end{enumerate}
+
+\newpage
+%==============================================================================
+\section{リスクと対策}
+%==============================================================================
+
+\subsection{主要リスク}
+
+\begin{center}
+\begin{tabular}{lll}
+\toprule
+\textbf{リスク} & \textbf{影響度} & \textbf{対策} \\
+\midrule
+VAPIのEC垂直統合 & 高 & 日本ローカル対応で差別化 \\
+Rep AI日本参入 & 中 & LINE連携、B2B展開で差別化 \\
+大手EC内製化 & 高 & 公式パートナー化交渉 \\
+技術的参入障壁低 & 中 & データモート構築、先行者優位確立 \\
+\bottomrule
+\end{tabular}
+\end{center}
+
+\subsection{対策の詳細}
+
+\subsubsection{vs VAPI垂直統合}
+
+日本市場特有の要素（配送連携、決済方法、敬語対応）で防御壁を構築。
+VAPIがEC展開しても、日本ローカライゼーションでは常に優位。
+
+\subsubsection{vs 大手ECプラットフォーム内製化}
+
+\begin{itemize}
+    \item 公式パートナー化交渉（Shopify Japan、BASE等）
+    \item OEM提供モデルへの転換
+    \item ニッチセグメント（高齢者向け、B2B等）への特化
+\end{itemize}
+
+%==============================================================================
+\section{結論}
+%==============================================================================
+
+\begin{keypoint}
+\textbf{omakase.aiの勝機}
+
+AI技術の凄さではなく、\\
+「\textbf{日本の商習慣にAIをフィットさせるインテグレーション力}」
+
+VAPIはエンジン、omakase.aiは\textbf{日本の道路事情に完璧に合わせた高級車}
+\end{keypoint}
+
+\subsection{戦略の核心}
+
+\begin{enumerate}
+    \item \textbf{日本市場ブルーオーシャン}: EC特化音声AI競合0社
+    \item \textbf{垂直特化}: 汎用AIと差別化、EC販売に最適化
+    \item \textbf{先行者優位}: 2025-2026年が確立の最後のチャンス
+    \item \textbf{データモート}: 会話×購買データで模倣困難な資産構築
+\end{enumerate}
+
+\vspace{1cm}
+
+\begin{center}
+\textbf{「その声が、売上になる。」}
+\end{center}
+
+\vfill
+
+\begin{center}
+\textcolor{darkgray}{\small --- End of Document ---}
+\end{center}
+
+\end{document}

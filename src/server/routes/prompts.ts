@@ -2,7 +2,7 @@
  * Dynamic Prompt Router - プロンプト動的生成API
  */
 
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import {
   generateDynamicPrompt,
   generateStoreContextFromUrl,
@@ -16,6 +16,25 @@ import { productStore } from '../services/store.js';
 import { storeContextStore } from '../services/store-context.js';
 
 export const promptsRouter = Router();
+
+const MAX_PRODUCTS_LIMIT = 200;
+
+const getWorkspaceId = (req: Request): string => {
+  const headerVal = req.headers['x-workspace-id'];
+  if (Array.isArray(headerVal)) {
+    return headerVal[0] || 'default';
+  }
+  return (headerVal as string)?.trim() || 'default';
+};
+
+const requireApiKey = (req: Request, res: any): boolean => {
+  const apiKey = process.env.ADMIN_API_KEY;
+  if (!apiKey) return true;
+  const provided = req.headers['x-api-key'];
+  if (provided === apiKey) return true;
+  res.status(401).json({ error: 'Unauthorized: invalid API key' });
+  return false;
+};
 
 // Request body types
 interface PromptGenerateInput {
@@ -63,6 +82,7 @@ interface CustomRulesInput {
 promptsRouter.post('/generate', (req, res): void => {
   try {
     const body = req.body as PromptGenerateInput;
+    const workspaceId = getWorkspaceId(req);
     const config: DynamicPromptConfig = {
       agentType: body.agentType || 'shopping-guide',
       agentName: body.agentName || 'アヤ',
@@ -70,7 +90,7 @@ promptsRouter.post('/generate', (req, res): void => {
       language: body.language || 'Japanese',
       startMessage: body.startMessage || 'こんにちは！本日はどのような商品をお探しですか？',
       endMessage: body.endMessage || 'ご利用ありがとうございました！',
-      storeContext: body.storeContext || storeContextStore.get() || undefined,
+      storeContext: body.storeContext || storeContextStore.get(workspaceId) || undefined,
       customRules: body.customRules,
       enabledFeatures: body.enabledFeatures || {
         productSearch: true,
@@ -80,18 +100,18 @@ promptsRouter.post('/generate', (req, res): void => {
       },
     };
 
-    const prompt = generateDynamicPrompt(config);
+    const prompt = generateDynamicPrompt(config, workspaceId);
 
     res.json({
       success: true,
       prompt,
-      config: {
-        agentType: config.agentType,
-        agentName: config.agentName,
-        language: config.language,
-        productCount: productStore.getAll().filter((p) => p.isActive).length,
-      },
-    });
+        config: {
+          agentType: config.agentType,
+          agentName: config.agentName,
+          language: config.language,
+          productCount: productStore.getAll(workspaceId).filter((p) => p.isActive).length,
+        },
+      });
   } catch (error) {
     console.error('Prompt generation error:', error);
     res.status(500).json({
@@ -108,6 +128,7 @@ promptsRouter.post('/generate', (req, res): void => {
 promptsRouter.post('/preview', (req, res): void => {
   try {
     const body = req.body as PromptGenerateInput;
+    const workspaceId = getWorkspaceId(req);
     const config: DynamicPromptConfig = {
       agentType: body.agentType || 'shopping-guide',
       agentName: body.agentName || 'アヤ',
@@ -115,12 +136,12 @@ promptsRouter.post('/preview', (req, res): void => {
       language: body.language || 'Japanese',
       startMessage: body.startMessage || 'こんにちは！',
       endMessage: body.endMessage || 'ありがとうございました！',
-      storeContext: body.storeContext || storeContextStore.get() || undefined,
+      storeContext: body.storeContext || storeContextStore.get(workspaceId) || undefined,
       customRules: body.customRules,
       enabledFeatures: body.enabledFeatures,
     };
 
-    const result = previewPrompt(config);
+    const result = previewPrompt(config, workspaceId);
 
     res.json({
       success: true,
@@ -205,11 +226,12 @@ promptsRouter.post('/from-url', async (req, res): Promise<void> => {
  * GET /api/prompts/store-context
  * 現在のストアコンテキストを取得
  */
-promptsRouter.get('/store-context', (_req, res): void => {
+promptsRouter.get('/store-context', (req, res): void => {
+  const workspaceId = getWorkspaceId(req);
   res.json({
     success: true,
-    storeContext: storeContextStore.get(),
-    productCount: productStore.getAll().length,
+    storeContext: storeContextStore.get(workspaceId),
+    productCount: productStore.getAll(workspaceId).length,
   });
 });
 
@@ -219,6 +241,7 @@ promptsRouter.get('/store-context', (_req, res): void => {
  */
 promptsRouter.put('/store-context', (req, res): void => {
   try {
+    const workspaceId = getWorkspaceId(req);
     const body = req.body as StoreContextInput;
     const context: StoreContext = {
       storeName: body.storeName || 'My Store',
@@ -229,11 +252,11 @@ promptsRouter.put('/store-context', (req, res): void => {
       policies: body.policies,
     };
 
-    storeContextStore.set(context);
+    storeContextStore.set(context, workspaceId);
 
     res.json({
       success: true,
-      storeContext: storeContextStore.get(),
+      storeContext: storeContextStore.get(workspaceId),
     });
   } catch (error) {
     console.error('Store context update error:', error);

@@ -2,11 +2,17 @@
  * Products Router - 商品管理API
  */
 
-import { Router } from 'express';
+import { Router, type Request } from 'express';
 import type { Product } from '../../types/index.js';
 import { productStore } from '../services/store.js';
 
 export const productsRouter = Router();
+
+const getWorkspaceId = (req: Request): string => {
+  const headerVal = req.headers['x-workspace-id'];
+  if (Array.isArray(headerVal)) return headerVal[0] || 'default';
+  return (headerVal as string)?.trim() || 'default';
+};
 
 // Request body types
 interface ProductInput {
@@ -54,6 +60,7 @@ productsRouter.get('/:id', (req, res): void => {
 // POST /api/products - 商品追加
 productsRouter.post('/', (req, res): void => {
   const body = req.body as ProductInput;
+  const workspaceId = getWorkspaceId(req);
   const productData: Partial<Product> = {
     name: body.name,
     description: body.description,
@@ -64,13 +71,14 @@ productsRouter.post('/', (req, res): void => {
     stockQuantity: body.stockQuantity,
     lowStockThreshold: body.lowStockThreshold,
   };
-  const product = productStore.add(productData);
+  const product = productStore.add(productData, workspaceId);
   res.status(201).json({ success: true, product });
 });
 
 // PUT /api/products/:id - 商品更新
 productsRouter.put('/:id', (req, res): void => {
   const { id } = req.params;
+  const workspaceId = getWorkspaceId(req);
   const body = req.body as Partial<ProductInput>;
   const updateData: Partial<Product> = {
     ...(body.name !== undefined && { name: body.name }),
@@ -82,7 +90,7 @@ productsRouter.put('/:id', (req, res): void => {
     ...(body.stockQuantity !== undefined && { stockQuantity: body.stockQuantity }),
     ...(body.lowStockThreshold !== undefined && { lowStockThreshold: body.lowStockThreshold }),
   };
-  const product = productStore.update(id, updateData);
+  const product = productStore.update(id, updateData, workspaceId);
 
   if (!product) {
     res.status(404).json({ error: 'Product not found' });
@@ -95,7 +103,8 @@ productsRouter.put('/:id', (req, res): void => {
 // DELETE /api/products/:id - 商品削除
 productsRouter.delete('/:id', (req, res): void => {
   const { id } = req.params;
-  const deleted = productStore.delete(id);
+  const workspaceId = getWorkspaceId(req);
+  const deleted = productStore.delete(id, workspaceId);
 
   if (!deleted) {
     res.status(404).json({ error: 'Product not found' });
@@ -109,6 +118,7 @@ productsRouter.delete('/:id', (req, res): void => {
 productsRouter.post('/bulk', (req, res): void => {
   const body = req.body as BulkProductsInput;
   const { products } = body;
+  const workspaceId = getWorkspaceId(req);
 
   if (!Array.isArray(products)) {
     res.status(400).json({ error: 'Products array required' });
@@ -124,7 +134,7 @@ productsRouter.post('/bulk', (req, res): void => {
       productUrl: p.productUrl,
       isActive: p.isActive ?? true,
     };
-    return productStore.add(productData);
+    return productStore.add(productData, workspaceId);
   });
   res.status(201).json({
     success: true,
@@ -136,7 +146,8 @@ productsRouter.post('/bulk', (req, res): void => {
 // GET /api/products/search/:query - 商品検索
 productsRouter.get('/search/:query', (req, res): void => {
   const { query } = req.params;
-  const products = productStore.search(query);
+  const workspaceId = getWorkspaceId(req);
+  const products = productStore.search(query, workspaceId);
   res.json({
     success: true,
     query,
@@ -150,7 +161,8 @@ productsRouter.get('/search/:query', (req, res): void => {
 // GET /api/products/:id/stock - 在庫状況取得
 productsRouter.get('/:id/stock', (req, res): void => {
   const { id } = req.params;
-  const stockStatus = productStore.getStockStatus(id);
+  const workspaceId = getWorkspaceId(req);
+  const stockStatus = productStore.getStockStatus(id, workspaceId);
 
   if (!stockStatus) {
     res.status(404).json({ error: 'Product not found' });
@@ -163,6 +175,7 @@ productsRouter.get('/:id/stock', (req, res): void => {
 // PUT /api/products/:id/stock - 在庫数量更新
 productsRouter.put('/:id/stock', (req, res): void => {
   const { id } = req.params;
+  const workspaceId = getWorkspaceId(req);
   const body = req.body as StockUpdateInput;
 
   if (typeof body.quantity !== 'number') {
@@ -170,14 +183,14 @@ productsRouter.put('/:id/stock', (req, res): void => {
     return;
   }
 
-  const product = productStore.updateStock(id, body.quantity);
+  const product = productStore.updateStock(id, body.quantity, workspaceId);
 
   if (!product) {
     res.status(404).json({ error: 'Product not found' });
     return;
   }
 
-  const stockStatus = productStore.getStockStatus(id);
+  const stockStatus = productStore.getStockStatus(id, workspaceId);
   res.json({
     success: true,
     product,
@@ -188,10 +201,11 @@ productsRouter.put('/:id/stock', (req, res): void => {
 // POST /api/products/:id/stock/decrement - 在庫減少（購入時）
 productsRouter.post('/:id/stock/decrement', (req, res): void => {
   const { id } = req.params;
+  const workspaceId = getWorkspaceId(req);
   const body = req.body as { amount?: number };
   const amount = body.amount ?? 1;
 
-  const result = productStore.decrementStock(id, amount);
+  const result = productStore.decrementStock(id, amount, workspaceId);
 
   if (!result.success) {
     res.status(result.error === '商品が見つかりません' ? 404 : 400).json({
@@ -202,7 +216,7 @@ productsRouter.post('/:id/stock/decrement', (req, res): void => {
     return;
   }
 
-  const stockStatus = productStore.getStockStatus(id);
+  const stockStatus = productStore.getStockStatus(id, workspaceId);
   res.json({
     success: true,
     product: result.product,
@@ -213,17 +227,18 @@ productsRouter.post('/:id/stock/decrement', (req, res): void => {
 // POST /api/products/:id/stock/increment - 在庫増加（入荷時）
 productsRouter.post('/:id/stock/increment', (req, res): void => {
   const { id } = req.params;
+  const workspaceId = getWorkspaceId(req);
   const body = req.body as { amount?: number };
   const amount = body.amount ?? 1;
 
-  const product = productStore.incrementStock(id, amount);
+  const product = productStore.incrementStock(id, amount, workspaceId);
 
   if (!product) {
     res.status(404).json({ error: 'Product not found' });
     return;
   }
 
-  const stockStatus = productStore.getStockStatus(id);
+  const stockStatus = productStore.getStockStatus(id, workspaceId);
   res.json({
     success: true,
     product,
@@ -232,8 +247,9 @@ productsRouter.post('/:id/stock/increment', (req, res): void => {
 });
 
 // GET /api/products/inventory/low-stock - 在庫少商品一覧
-productsRouter.get('/inventory/low-stock', (_req, res): void => {
-  const products = productStore.getLowStockProducts();
+productsRouter.get('/inventory/low-stock', (req, res): void => {
+  const workspaceId = getWorkspaceId(req);
+  const products = productStore.getLowStockProducts(workspaceId);
   res.json({
     success: true,
     count: products.length,
@@ -242,8 +258,9 @@ productsRouter.get('/inventory/low-stock', (_req, res): void => {
 });
 
 // GET /api/products/inventory/out-of-stock - 在庫切れ商品一覧
-productsRouter.get('/inventory/out-of-stock', (_req, res): void => {
-  const products = productStore.getOutOfStockProducts();
+productsRouter.get('/inventory/out-of-stock', (req, res): void => {
+  const workspaceId = getWorkspaceId(req);
+  const products = productStore.getOutOfStockProducts(workspaceId);
   res.json({
     success: true,
     count: products.length,
@@ -252,7 +269,8 @@ productsRouter.get('/inventory/out-of-stock', (_req, res): void => {
 });
 
 // DELETE /api/products - 全商品削除
-productsRouter.delete('/', (_req, res): void => {
-  productStore.clear();
+productsRouter.delete('/', (req, res): void => {
+  const workspaceId = getWorkspaceId(req);
+  productStore.clear(workspaceId);
   res.json({ success: true, message: 'All products cleared' });
 });

@@ -1,0 +1,463 @@
+\documentclass[a4paper,11pt]{article}
+
+% ===== パッケージ =====
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[english,japanese]{babel}
+\usepackage{xeCJK}
+\usepackage{graphicx}
+\usepackage{geometry}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{float}
+
+% ===== ページ設定 =====
+\geometry{
+  left=25mm,
+  right=25mm,
+  top=30mm,
+  bottom=30mm
+}
+
+% ===== 色定義 =====
+\definecolor{primary}{RGB}{33, 37, 41}
+\definecolor{secondary}{RGB}{108, 117, 125}
+\definecolor{accent}{RGB}{0, 123, 255}
+\definecolor{codebg}{RGB}{248, 249, 250}
+
+% ===== リンク設定 =====
+\hypersetup{
+  colorlinks=true,
+  linkcolor=accent,
+  urlcolor=accent,
+  citecolor=accent
+}
+
+% ===== コードブロック設定 =====
+\lstset{
+  backgroundcolor=\color{codebg},
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  rulecolor=\color{secondary},
+  numbers=left,
+  numberstyle=\tiny\color{secondary},
+  keywordstyle=\color{accent},
+  commentstyle=\color{secondary},
+  stringstyle=\color{primary}
+}
+
+% ===== ヘッダー・フッター =====
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\textcolor{secondary}{\small omakase.ai Technical Report}}
+\fancyhead[R]{\textcolor{secondary}{\small 2025-12-06}}
+\fancyfoot[C]{\textcolor{secondary}{\thepage}}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0pt}
+
+% ===== セクション書式 =====
+\titleformat{\section}
+  {\Large\bfseries\color{primary}}
+  {\thesection}{1em}{}
+\titleformat{\subsection}
+  {\large\bfseries\color{primary}}
+  {\thesubsection}{1em}{}
+\titleformat{\subsubsection}
+  {\normalsize\bfseries\color{primary}}
+  {\thesubsubsection}{1em}{}
+
+% ===== 日本語フォント =====
+\setCJKmainfont{Hiragino Mincho ProN}
+\setCJKsansfont{Hiragino Kaku Gothic ProN}
+
+% ===== ドキュメント開始 =====
+\begin{document}
+
+% ===== 表紙 =====
+\begin{titlepage}
+  \centering
+  \vspace*{3cm}
+
+  {\Huge\bfseries\color{primary} omakase.ai\\[0.5cm] Technical Analysis Report}
+
+  \vspace{1cm}
+
+  {\Large\color{secondary} 技術分析ドキュメント}
+
+  \vspace{2cm}
+
+  {\large Version 1.0}
+
+  \vspace{0.5cm}
+
+  {\large 2025年12月6日}
+
+  \vfill
+
+  {\normalsize
+    HAR解析に基づくVAPI/Daily.coプロトコル分析\\
+    競合比較・技術スタック評価
+  }
+
+  \vspace{2cm}
+
+  {\small\color{secondary} Confidential - Internal Use Only}
+\end{titlepage}
+
+% ===== 目次 =====
+\tableofcontents
+\newpage
+
+% ===== 1. エグゼクティブサマリー =====
+\section{エグゼクティブサマリー}
+
+omakase.aiはEC（電子商取引）サイト向けの音声AIショッピングアシスタントプラットフォームである。
+本レポートでは、プロダクションHARファイルの解析に基づき、技術スタック、外部依存関係、独自開発部分を詳細に分析する。
+
+\subsection{主要な発見}
+
+\begin{itemize}
+  \item \textbf{音声AI基盤}: VAPI（Voice AI Platform）に完全依存
+  \item \textbf{通信基盤}: Daily.coのWebRTC SFUを使用
+  \item \textbf{認証}: Clerkによるセッション管理
+  \item \textbf{独自開発}: Widget UI、プロンプト設計、バックエンド統合
+\end{itemize}
+
+\subsection{技術依存度}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lcc}
+    \toprule
+    \textbf{コンポーネント} & \textbf{提供元} & \textbf{依存度} \\
+    \midrule
+    音声認識 (STT) & VAPI/Deepgram & 高 \\
+    音声合成 (TTS) & VAPI/ElevenLabs & 高 \\
+    LLM & VAPI/OpenAI/Claude & 高 \\
+    WebRTC & Daily.co & 高 \\
+    認証 & Clerk & 中 \\
+    Widget UI & 独自開発 & - \\
+    バックエンドAPI & 独自開発 & - \\
+    \bottomrule
+  \end{tabular}
+  \caption{技術依存マトリクス}
+\end{table}
+
+\newpage
+
+% ===== 2. システムアーキテクチャ =====
+\section{システムアーキテクチャ}
+
+\subsection{全体構成}
+
+omakase.aiは以下の4層構造で構成される：
+
+\begin{enumerate}
+  \item \textbf{Presentation Layer}: React Widget
+  \item \textbf{Transport Layer}: Daily.co WebRTC
+  \item \textbf{AI Platform Layer}: VAPI
+  \item \textbf{Application Layer}: Express.js Backend
+\end{enumerate}
+
+\subsection{アーキテクチャ図}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.95\textwidth]{images/omakase-ai-architecture.png}
+  \caption{omakase.ai システムアーキテクチャ}
+\end{figure}
+
+\subsection{データフロー}
+
+\begin{enumerate}
+  \item ユーザーがWidgetで通話開始をクリック
+  \item ClerkでセッションJWTを検証
+  \item VAPIに通話開始リクエスト（assistantId + page\_context）
+  \item Daily.coでWebRTCルーム作成・接続
+  \item 音声ストリームがVapi Listener/Speakerと双方向通信
+  \item VAPIがFunction Toolsでバックエンドを呼び出し
+\end{enumerate}
+
+\newpage
+
+% ===== 3. プロトコル詳細 =====
+\section{音声通話プロトコル}
+
+HAR解析により、VAPI/Daily.coの詳細なプロトコルフローを特定した。
+
+\subsection{通話開始シーケンス}
+
+\begin{figure}[H]
+  \centering
+  \includegraphics[width=0.98\textwidth]{images/protocol.png}
+  \caption{VAPI/Daily.co 音声通話プロトコルシーケンス}
+\end{figure}
+
+\subsection{主要フェーズ}
+
+\begin{longtable}{lp{10cm}}
+  \toprule
+  \textbf{フェーズ} & \textbf{説明} \\
+  \midrule
+  \endhead
+
+  認証 & Clerkで\texttt{POST /sessions/\{id\}/touch}を呼び出し、セッション検証 \\
+  \midrule
+  VAPI初期化 & \texttt{POST /call/web}でassistantIdとpage\_contextを送信 \\
+  \midrule
+  Daily.co接続 & \texttt{POST /rooms/check/vapi/\{roomId\}}でICE設定取得 \\
+  \midrule
+  WebSocket & SFUへのWebSocket接続、\texttt{join-for-sig}メッセージ \\
+  \midrule
+  WebRTC & \texttt{create-transport}、\texttt{connect-transport}、\texttt{send-track} \\
+  \midrule
+  エージェント参加 & Vapi Speaker/Listenerが\texttt{sig-presence}で参加 \\
+  \midrule
+  音声会話 & RTPパケットの双方向ストリーミング \\
+  \bottomrule
+\end{longtable}
+
+\subsection{技術仕様}
+
+\begin{itemize}
+  \item \textbf{プロトコル}: WebSocket + WebRTC
+  \item \textbf{トポロジー}: SFU (Selective Forwarding Unit)
+  \item \textbf{コーデック}: audio/opus, 48kHz
+  \item \textbf{ICE}: Cloudflare STUN, Twilio TURN
+  \item \textbf{参加者}: User, Vapi Speaker, Vapi Listener
+\end{itemize}
+
+\newpage
+
+% ===== 4. 外部サービス分析 =====
+\section{外部サービス依存分析}
+
+\subsection{VAPI (Voice AI Platform)}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{項目} & \textbf{詳細} \\
+    \midrule
+    エンドポイント & \texttt{https://api.vapi.ai/call/web} \\
+    assistantId & \texttt{91eb9aaa-17dc-4aa0-862b-e28fa21c0df4} \\
+    機能 & STT, TTS, LLM, Function Calling \\
+    レイテンシ & 500ms未満 \\
+    処理実績 & 150M+通話 \\
+    \bottomrule
+  \end{tabular}
+  \caption{VAPI技術仕様}
+\end{table}
+
+\subsubsection{リクエスト例}
+
+\begin{lstlisting}[language=json]
+POST /call/web
+{
+  "assistantId": "91eb9aaa-...",
+  "assistantOverrides": {
+    "variableValues": {
+      "page_context": {
+        "product_name": "...",
+        "price": 2500,
+        "stock": "available"
+      }
+    }
+  }
+}
+\end{lstlisting}
+
+\subsection{Daily.co (WebRTC Infrastructure)}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{項目} & \textbf{詳細} \\
+    \midrule
+    シグナリング & \texttt{https://gs.daily.co/} \\
+    SFU WebSocket & \texttt{wss://ip-xxx.wss.daily.co} \\
+    グローバル拠点 & 75+ \\
+    レイテンシ & 13ms中央値 \\
+    SDK & daily-js v0.85.0 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Daily.co技術仕様}
+\end{table}
+
+\subsection{Clerk (Authentication)}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{項目} & \textbf{詳細} \\
+    \midrule
+    エンドポイント & \texttt{https://clerk.omakase.ai/} \\
+    機能 & セッション管理, JWT発行 \\
+    トークン更新 & 約45秒間隔 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Clerk技術仕様}
+\end{table}
+
+\newpage
+
+% ===== 5. 独自開発部分 =====
+\section{独自開発部分の分析}
+
+\subsection{価値提供マトリクス}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lccl}
+    \toprule
+    \textbf{コンポーネント} & \textbf{独自性} & \textbf{差別化} & \textbf{説明} \\
+    \midrule
+    プロンプト設計 & 高 & 高 & EC販売特化シナリオ \\
+    Widget UI & 高 & 中 & ブランディング対応 \\
+    バックエンドAPI & 中 & 高 & 商品/カート連携 \\
+    Function Tools & 中 & 高 & カート追加等 \\
+    認証統合 & 低 & 低 & Clerk使用 \\
+    音声AI基盤 & 低 & 低 & VAPI依存 \\
+    \bottomrule
+  \end{tabular}
+  \caption{独自開発価値マトリクス}
+\end{table}
+
+\subsection{独自開発ファイル構造}
+
+\begin{lstlisting}[language=bash]
+frontend/src/
+  components/
+    preview-phone.tsx      # プレビュー表示
+    agent-selector.tsx     # エージェント選択
+    config-panel.tsx       # 設定パネル
+    ec-context-form.tsx    # EC連携設定
+  lib/
+    api.ts                 # APIクライアント
+    realtime.ts            # WebSocket処理
+
+src/server/
+  routes/
+    products.ts            # 商品API
+    voice.ts               # 音声API
+    knowledge.ts           # ナレッジAPI
+  services/
+    store.ts               # データストア
+    prompt-generator.ts    # プロンプト生成
+\end{lstlisting}
+
+\newpage
+
+% ===== 6. 競合分析 =====
+\section{競合分析}
+
+\subsection{主要競合比較}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{lccccc}
+    \toprule
+    \textbf{機能} & \textbf{omakase.ai} & \textbf{VAPI} & \textbf{Pipecat} & \textbf{Rep AI} & \textbf{Retell} \\
+    \midrule
+    音声対話 & \checkmark & \checkmark & \checkmark & \checkmark & \checkmark \\
+    Webウィジェット & \checkmark & \checkmark & - & \checkmark & - \\
+    EC特化 & \checkmark & - & - & \checkmark & - \\
+    日本語 & \checkmark & \checkmark & \checkmark & ? & \checkmark \\
+    カート統合 & \checkmark & - & - & \checkmark & - \\
+    OSS & - & - & \checkmark & - & - \\
+    \bottomrule
+  \end{tabular}
+  \caption{競合機能比較}
+\end{table}
+
+\subsection{ポジショニング}
+
+omakase.aiは「EC特化」×「日本市場」の垂直特化ポジションを取る。
+汎用プラットフォーム（VAPI, Pipecat）との差別化は、EC販売に最適化された会話設計とカート統合にある。
+
+\subsection{Pipecat移行の可能性}
+
+\begin{table}[H]
+  \centering
+  \begin{tabular}{ll}
+    \toprule
+    \textbf{メリット} & \textbf{デメリット} \\
+    \midrule
+    VAPI料金削減 & 開発工数増加 \\
+    カスタマイズ自由度 & インフラ管理必要 \\
+    ベンダーロックイン回避 & 保守負担増 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Pipecat移行の評価}
+\end{table}
+
+\newpage
+
+% ===== 7. 推奨事項 =====
+\section{推奨事項}
+
+\subsection{短期 (3-6ヶ月)}
+
+\begin{enumerate}
+  \item \textbf{プロンプト・シナリオ強化}: 業種別テンプレート、購買心理考慮
+  \item \textbf{分析ダッシュボード}: 会話分析、コンバージョン追跡
+  \item \textbf{A/Bテスト基盤}: プロンプト・声・フローの最適化
+\end{enumerate}
+
+\subsection{中期 (6-12ヶ月)}
+
+\begin{enumerate}
+  \item \textbf{Pipecat検証}: PoC実施、コスト比較
+  \item \textbf{データ蓄積}: 会話ログからの学習、レコメンド改善
+  \item \textbf{データベース導入}: In-Memory → PostgreSQL + Redis
+\end{enumerate}
+
+\subsection{長期 (1-2年)}
+
+\begin{enumerate}
+  \item \textbf{自社音声AI}: Fine-tunedモデル、独自STT/TTS
+  \item \textbf{プラットフォーム化}: SDK公開、マーケットプレイス
+\end{enumerate}
+
+\newpage
+
+% ===== 8. 付録 =====
+\section{付録}
+
+\subsection{参考ドキュメント}
+
+\begin{itemize}
+  \item \texttt{docs/API.md} - API仕様書
+  \item \texttt{docs/omakase-ai-protocol.puml} - プロトコルシーケンス
+  \item \texttt{docs/architecture.puml} - アーキテクチャ図
+  \item \texttt{docs/TECHNICAL\_ANALYSIS.md} - 技術分析詳細
+  \item \texttt{docs/COMPETITIVE\_ANALYSIS.md} - 競合分析詳細
+\end{itemize}
+
+\subsection{外部リンク}
+
+\begin{itemize}
+  \item VAPI: \url{https://vapi.ai/}
+  \item Daily.co: \url{https://www.daily.co/}
+  \item Pipecat: \url{https://docs.pipecat.ai/}
+  \item Clerk: \url{https://clerk.com/}
+\end{itemize}
+
+\vfill
+
+\begin{center}
+  \textcolor{secondary}{\small --- End of Document ---}
+\end{center}
+
+\end{document}
